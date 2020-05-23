@@ -2,12 +2,27 @@
 
 #include "vcl/opengl/opengl.hpp"
 
+#include <utility>
 namespace vcl
 {
 
-mesh_drawable_gpu_data::mesh_drawable_gpu_data()
-    :vao(0), number_triangles(0), vbo_index(0), vbo_position(0), vbo_normal(0), vbo_color(0), vbo_texture_uv(0)
-{}
+mesh_drawable_gpu_data::~mesh_drawable_gpu_data() {
+  clear();
+}
+
+mesh_drawable_gpu_data::mesh_drawable_gpu_data(mesh_drawable_gpu_data && other) noexcept {
+  {
+    using namespace std;
+    swap(other, *this);
+  }
+}
+mesh_drawable_gpu_data& mesh_drawable_gpu_data::operator=(mesh_drawable_gpu_data && other) noexcept{
+  {
+    using namespace std;
+    swap(other, *this);
+  }
+  return *this;
+}
 
 mesh_drawable_gpu_data::mesh_drawable_gpu_data(const mesh &mesh_cpu_arg)
 {

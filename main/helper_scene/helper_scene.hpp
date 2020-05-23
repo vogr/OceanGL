@@ -3,18 +3,20 @@
 #include "vcl/vcl.hpp"
 #include <map>
 
+
 struct scene_structure
 {
     vcl::camera_scene camera;
     vcl::camera_control_glfw camera_control;
     vcl::mesh_drawable frame_camera;
     vcl::mesh_drawable frame_worldspace;
-    GLuint texture_white;
+    GLuint texture_white {0};
+    vcl::light_animation_data light_data;
 };
 
 struct gui_structure
 {
-    GLFWwindow* window;
+    GLFWwindow* window {nullptr};
     std::string window_title;
 
     bool show_frame_camera     = true;

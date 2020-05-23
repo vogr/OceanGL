@@ -68,7 +68,6 @@ int main()
     std::cout<<"\t [OK] Data setup"<<std::endl;
     opengl_debug();
 
-
     // ************************************** //
     // Animation loop
     // ************************************** //

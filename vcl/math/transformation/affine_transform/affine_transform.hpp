@@ -39,7 +39,7 @@ struct affine_transform {
     /** Rotation matrix 3x3 */
     mat3 rotation;
     /** Isotropic scaling */
-    float scaling;
+    float scaling {1.};
     /** Non isotropic scaling (sx, sy, sz) */
     vec3 scaling_axis;
 

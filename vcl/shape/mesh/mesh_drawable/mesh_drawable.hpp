@@ -1,8 +1,11 @@
 #pragma once
 
+#include <memory>
+
 #include "vcl/shape/mesh/mesh_structure/mesh.hpp"
 #include "vcl/math/math.hpp"
 #include "vcl/interaction/camera/camera.hpp"
+#include <vcl/interaction/light_animation_data/light_animation_data.hpp>
 
 #include "mesh_drawable_gpu_data/mesh_drawable_gpu_data.hpp"
 #include "mesh_drawable_uniform/mesh_drawable_uniform.hpp"
@@ -11,18 +14,14 @@
 namespace vcl
 {
 
-
-
-
 /** High level OpenGL drawable structure.
  * mesh_drawable contains gpu data (mesh_drawable_gpu_data: VAO, VBO, etc.), and a set of uniform parameter (mesh_drawable_uniform)*/
 struct mesh_drawable
 {
 public:
-
-    mesh_drawable();
+    mesh_drawable() = default;
     /** Initialize VAO and VBO from the mesh */
-    mesh_drawable(const mesh& mesh_cpu, GLuint shader = 0, GLuint texture_id = 0);
+    explicit mesh_drawable(const mesh& mesh_cpu, GLuint shader = 0, GLuint texture_id = 0);
 
 
     /** Clear buffers (VBO, VAO, etc) */
@@ -38,14 +37,16 @@ public:
 
 
     /** Data attributes: VAO and VBO as well as the number of triangle */
-    mesh_drawable_gpu_data data;
+    std::shared_ptr<mesh_drawable_gpu_data> data;
     mesh_drawable_uniform uniform;
-    GLuint shader;
-    GLuint texture_id;
+    GLuint shader {0};
+    GLuint texture_id {0};
+    GLuint normal_texture_id {0};
 };
 
 void draw(const mesh_drawable& drawable, const camera_scene& camera);
 void draw(const mesh_drawable& drawable, const camera_scene& camera, GLuint shader);
 void draw(const mesh_drawable& drawable, const camera_scene& camera, GLuint shader, GLuint texture_id);
-
+void draw(const mesh_drawable& drawable, const camera_scene& user_camera,
+          const light_animation_data & light_data, DrawType type);
 }

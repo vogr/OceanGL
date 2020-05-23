@@ -38,5 +38,12 @@ void main()
     vec4 color_texture = texture(texture_sampler, fragment.texture_uv);
     vec3 c = (ambiant+diffuse_value)*color.rgb*fragment.color.rgb*color_texture.rgb + specular_value*white;
 
+    // Add fog
+    float dist_from_view = length(camera_position - fragment.position.xyz);
+    float fog = 1 - 0.7 * exp(-0.01 * dist_from_view);
+
+    c = (1 - fog) * c + fog * vec3(0.3,0.3,0.4);
+
+
     FragColor = vec4(c, color_texture.a*fragment.color.a*color_alpha);
 }

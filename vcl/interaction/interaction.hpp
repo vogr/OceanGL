@@ -6,3 +6,4 @@
 #include "screen_motion/screen_motion.hpp"
 #include "time_period/time_period.hpp"
 #include "picking/picking.hpp"
+#include "light_animation_data/light_animation_data.hpp"

@@ -8,11 +8,6 @@
 
 namespace vcl{
 
-
-
-
-
-
 struct hierarchy_mesh_drawable
 {
 
@@ -26,16 +21,20 @@ struct hierarchy_mesh_drawable
     void add(const hierarchy_mesh_drawable_node& node);
 
     // Shortcut to add a new node
-    void add(const mesh_drawable& element,
-             const std::string& name,
-             const std::string& name_parent="global_frame",
-             const affine_transform& transform = affine_transform());
+    void add(
+        mesh_drawable element,
+        std::string name,
+        std::string name_parent="global_frame",
+        affine_transform const & transform= affine_transform()
+    );
 
     // Shortcut to add directly an initial translation instead of an affine transform
-    void add(const mesh_drawable& element,
-             const std::string& name,
-             const std::string& name_parent,
-             const vec3& translation);
+    void add(
+      mesh_drawable element,
+      std::string name,
+      std::string name_parent,
+      const vec3& translation
+    );
 
     // Get node by name
     hierarchy_mesh_drawable_node& operator[](const std::string& name);
@@ -56,10 +55,8 @@ struct hierarchy_mesh_drawable
 
 /** Display all the elements of the hierarchy
     Assume that the hierarchy has updated global coordinates
-    The third argument "shader" is optionnal
-      - shader  = -1 (default) indicates to use the shader associated to each element
-      - shader != -1 force the use of this shader for all elements
+    Always draw using the default shader.
 */
-void draw(const hierarchy_mesh_drawable& hierarchy, const camera_scene& camera, int shader=-1);
-
+//void draw(const hierarchy_mesh_drawable& hierarchy, const camera_scene& camera);
+void draw(const hierarchy_mesh_drawable& hierarchy, const camera_scene& camera, light_animation_data const & light_data, DrawType draw_type);
 }

@@ -7,11 +7,16 @@
 
 namespace vcl
 {
-
 struct mesh_drawable_gpu_data {
 
-    mesh_drawable_gpu_data();
-    mesh_drawable_gpu_data(const mesh& mesh_cpu);
+    mesh_drawable_gpu_data() = default;
+    ~mesh_drawable_gpu_data();
+    mesh_drawable_gpu_data(mesh_drawable_gpu_data const &) = delete;
+    mesh_drawable_gpu_data& operator=(mesh_drawable_gpu_data const &) = delete;
+    mesh_drawable_gpu_data(mesh_drawable_gpu_data &&) noexcept;
+    mesh_drawable_gpu_data& operator=(mesh_drawable_gpu_data &&) noexcept;
+
+    explicit mesh_drawable_gpu_data(const mesh& mesh_cpu);
 
     /** Clear buffers */
     void clear();
@@ -25,15 +30,15 @@ struct mesh_drawable_gpu_data {
     void update_normal(const buffer<vec3>& new_normal);
 
 
-    GLuint vao;
-    unsigned int number_triangles;
+    GLuint vao {0};
+    unsigned int number_triangles {0};
 
-    GLuint vbo_index;      // Triplet (i,j,k) of triangle index
+    GLuint vbo_index {0};      // Triplet (i,j,k) of triangle index
 
-    GLuint vbo_position;   // (x,y,z) coordinates
-    GLuint vbo_normal;     // (nx,ny,nz) normals coordinates (unit length)
-    GLuint vbo_color;      // (r,g,b) values
-    GLuint vbo_texture_uv; // (u,v) texture coordinates
+    GLuint vbo_position {0};   // (x,y,z) coordinates
+    GLuint vbo_normal {0};     // (nx,ny,nz) normals coordinates (unit length)
+    GLuint vbo_color {0};      // (r,g,b) values
+    GLuint vbo_texture_uv {0}; // (u,v) texture coordinates
 };
 
 /** Call raw OpenGL draw */

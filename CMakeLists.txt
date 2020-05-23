@@ -6,7 +6,6 @@ add_definitions(-DIMGUI_IMPL_OPENGL_LOADER_GLAD)
 
 # Add G++ Warning on Unix
 if(UNIX)
-add_definitions(-g -O2 -std=c++11 -Wall -Wextra)
     set(CMAKE_CXX_COMPILER g++)
     find_package(glfw3 REQUIRED) #Expect glfw3 to be installed on your system
 endif()
@@ -37,6 +36,17 @@ add_executable(pgm ${source_files})
 
 if(UNIX)
 target_link_libraries(pgm glfw dl -static-libstdc++)
+target_compile_options(pgm
+    PUBLIC -std=c++14 -pipe
+    $<$<CONFIG:Debug>:-O0 -ggdb3 -gsplit-dwarf>
+    $<$<CONFIG:Release>:-O2 -march=native -flto -fno-fat-lto-objects> # release: 03 is implied, add back 02
+    $<$<CONFIG:RelWithDebInfo>:-O2 -march=native -flto -fno-fat-lto-objects -ggdb3 -gsplit-dwarf> # relwithdebinfo: 02 is implied
+    -Wp,-D_FORTIFY_SOURCE=2  -Wp,-D_GLIBCXX_ASSERTIONS
+    -fexceptions -fasynchronous-unwind-tables -fstack-protector-strong -fstack-clash-protection -fcf-protection
+    PRIVATE -Wall -Wextra -Wpedantic -Wformat=2 -Wswitch-default -Wswitch-enum -Wfloat-equal -Wno-conversion
+    -pedantic-errors -Werror=format-security
+    -fdiagnostics-color=always
+)
 endif()
 
 if(WIN32)

@@ -1,6 +1,7 @@
 #include "hierarchy_mesh_drawable.hpp"
 
 #include <set>
+#include <memory>
 
 namespace vcl {
 
@@ -20,22 +21,22 @@ void hierarchy_mesh_drawable::add(const hierarchy_mesh_drawable_node& node)
 
 
 // Shortcut to add a new node
-void hierarchy_mesh_drawable::add(const mesh_drawable& element,
-                             const std::string& name,
-                             const std::string& name_parent,
-                             const affine_transform& transform)
+void hierarchy_mesh_drawable::add(mesh_drawable element,
+                             std::string name,
+                             std::string name_parent,
+                             affine_transform const & transform)
 {
-    hierarchy_mesh_drawable_node node(element, name, name_parent, transform);
+    hierarchy_mesh_drawable_node node(std::move(element), std::move(name), std::move(name_parent), transform);
     add(node);
 }
 
 // Shortcut to add directly an initial translation instead of an affine transform
-void hierarchy_mesh_drawable::add(const mesh_drawable& element,
-                             const std::string& name,
-                             const std::string& name_parent,
-                             const vec3& translation)
+void hierarchy_mesh_drawable::add(mesh_drawable element,
+                            std::string name,
+                            std::string name_parent,
+                            const vec3& translation)
 {
-    hierarchy_mesh_drawable_node node(element, name, name_parent, translation);
+    hierarchy_mesh_drawable_node node(std::move(element), std::move(name), std::move(name_parent), translation);
     add(node);
 }
 
@@ -112,7 +113,7 @@ void hierarchy_mesh_drawable::update_local_to_global_coordinates()
     }
 }
 
-void draw(const hierarchy_mesh_drawable& hierarchy, const camera_scene& camera, int shader)
+void draw(const hierarchy_mesh_drawable& hierarchy, const camera_scene& camera, const light_animation_data & light_data, DrawType draw_type)
 {
     const size_t N = hierarchy.elements.size();
     for(size_t k=0; k<N; ++k)
@@ -126,10 +127,7 @@ void draw(const hierarchy_mesh_drawable& hierarchy, const camera_scene& camera, 
         // Update local uniform values (and combine them with uniform already stored in the mesh)
         visual_element.uniform.transform = T * visual_element.uniform.transform;
 
-        if(shader==-1) // Use the shader associated to the current visual_element
-            vcl::draw(visual_element, camera);
-        else // use the shader set in the argument
-            vcl::draw(visual_element, camera, shader);
+        vcl::draw(visual_element, camera, light_data, draw_type);
     }
 }
 

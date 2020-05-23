@@ -45,17 +45,18 @@ void initialize_interface(gui_structure& gui)
 
 void load_shaders(std::map<std::string,GLuint>& shaders)
 {
-    std::cout<<"*** Setup Shader ***"<<std::endl;
+  std::cout<<"*** Setup Shader ***"<<std::endl;
+  shaders["mesh"] = create_shader_program("scenes/shared_assets/shaders/mesh/shader.vert.glsl","scenes/shared_assets/shaders/mesh/shader.frag.glsl");
+  shaders["mesh_draw_pass"] = create_shader_program("scenes/shared_assets/shaders/mesh_two_pass/draw_pass.vert.glsl","scenes/shared_assets/shaders/mesh_two_pass/draw_pass.frag.glsl");
+  shaders["mesh_depth_pass"] = create_shader_program("scenes/shared_assets/shaders/mesh_two_pass/depth_pass.vert.glsl","scenes/shared_assets/shaders/mesh_two_pass/depth_pass.frag.glsl");
+  shaders["mesh_bf"] = create_shader_program("scenes/shared_assets/shaders/mesh_back_illumination/mesh.vert.glsl","scenes/shared_assets/shaders/mesh_back_illumination/mesh.frag.glsl");
+  shaders["wireframe"] = create_shader_program("scenes/shared_assets/shaders/wireframe/shader.vert.glsl","scenes/shared_assets/shaders/wireframe/shader.geom.glsl","scenes/shared_assets/shaders/wireframe/shader.frag.glsl");
+  shaders["wireframe_quads"] = create_shader_program("scenes/shared_assets/shaders/wireframe_quads/shader.vert.glsl","scenes/shared_assets/shaders/wireframe_quads/shader.geom.glsl","scenes/shared_assets/shaders/wireframe_quads/shader.frag.glsl");
+  shaders["curve"] = create_shader_program("scenes/shared_assets/shaders/curve/shader.vert.glsl","scenes/shared_assets/shaders/curve/shader.frag.glsl");
+  shaders["segment_im"] = create_shader_program("scenes/shared_assets/shaders/segment_immediate_mode/shader.vert.glsl","scenes/shared_assets/shaders/segment_immediate_mode/shader.frag.glsl");
+  shaders["normals"] = create_shader_program("scenes/shared_assets/shaders/normals/shader.vert.glsl","scenes/shared_assets/shaders/normals/shader.geom.glsl","scenes/shared_assets/shaders/normals/shader.frag.glsl");
 
-    shaders["mesh"] = create_shader_program("scenes/shared_assets/shaders/mesh/shader.vert.glsl","scenes/shared_assets/shaders/mesh/shader.frag.glsl");
-    shaders["mesh_bf"] = create_shader_program("scenes/shared_assets/shaders/mesh_back_illumination/mesh.vert.glsl","scenes/shared_assets/shaders/mesh_back_illumination/mesh.frag.glsl");
-    shaders["wireframe"] = create_shader_program("scenes/shared_assets/shaders/wireframe/shader.vert.glsl","scenes/shared_assets/shaders/wireframe/shader.geom.glsl","scenes/shared_assets/shaders/wireframe/shader.frag.glsl");
-    shaders["wireframe_quads"] = create_shader_program("scenes/shared_assets/shaders/wireframe_quads/shader.vert.glsl","scenes/shared_assets/shaders/wireframe_quads/shader.geom.glsl","scenes/shared_assets/shaders/wireframe_quads/shader.frag.glsl");
-    shaders["curve"] = create_shader_program("scenes/shared_assets/shaders/curve/shader.vert.glsl","scenes/shared_assets/shaders/curve/shader.frag.glsl");
-    shaders["segment_im"] = create_shader_program("scenes/shared_assets/shaders/segment_immediate_mode/shader.vert.glsl","scenes/shared_assets/shaders/segment_immediate_mode/shader.frag.glsl");
-    shaders["normals"] = create_shader_program("scenes/shared_assets/shaders/normals/shader.vert.glsl","scenes/shared_assets/shaders/normals/shader.geom.glsl","scenes/shared_assets/shaders/normals/shader.frag.glsl");
-
-    std::cout<<"\t [OK] Shader loaded"<<std::endl;
+  std::cout<<"\t [OK] Shader loaded"<<std::endl;
 }
 
 void setup_scene(scene_structure &scene, gui_structure& gui, const std::map<std::string,GLuint>& shaders)
@@ -79,7 +80,7 @@ void setup_scene(scene_structure &scene, gui_structure& gui, const std::map<std:
 
 void clear_screen()
 {
-    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+    glClearColor(0.282, 0.239, 0.545, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
     glClear(GL_DEPTH_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST);

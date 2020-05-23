@@ -1,6 +1,7 @@
 #include "camera.hpp"
 
 #include "../../math/transformation/transformation.hpp"
+#include "../../math/helper_functions/norm/norm.hpp"
 
 namespace vcl
 {
@@ -73,6 +74,27 @@ mat4 camera_scene::camera_matrix() const
 }
 
 
+mat4 look_at(vcl::vec3 eye, vcl::vec3 target, vcl::vec3 up) {
+  vcl::vec3 zaxis = normalize(eye - target);
+  vcl::vec3 xaxis = normalize(cross(up, zaxis));
+  vcl::vec3 yaxis = cross(zaxis, xaxis);
+
+  //
+  mat4 tr_orientation = {
+          xaxis.x, xaxis.y, xaxis.z, 0,
+          yaxis.x, yaxis.y, yaxis.z, 0,
+          zaxis.x, zaxis.y, zaxis.z, 0,
+          0,       0,       0,       1
+  };
+  mat4 rev_translation = {
+          1, 0, 0, -eye.x,
+          0, 1, 0, -eye.y,
+          0, 0, 1, -eye.z,
+          0, 0, 0, 1
+  };
+  return tr_orientation * rev_translation;
+}
+
 mat4 perspective_matrix(float angle_of_view, float image_aspect, float z_near, float z_far)
 {
     const float fy = 1/std::tan(angle_of_view/2);
@@ -84,9 +106,9 @@ mat4 perspective_matrix(float angle_of_view, float image_aspect, float z_near, f
 
     return {
         fx,0,0,0,
-                0,fy,0,0,
-                0,0,C,D,
-                0,0,-1,0
+      0,fy,0,0,
+      0,0,   C,       D,
+      0,0,-1,0
     };
 
 }

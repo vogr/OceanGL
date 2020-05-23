@@ -49,6 +49,7 @@ mat4 mat4::zero()
                 0,0,0,0);
 }
 
+
 mat4 mat4::perspective(float angle_of_view, float image_aspect, float z_near, float z_far)
 {
     const float fy = 1/std::tan(angle_of_view/2);

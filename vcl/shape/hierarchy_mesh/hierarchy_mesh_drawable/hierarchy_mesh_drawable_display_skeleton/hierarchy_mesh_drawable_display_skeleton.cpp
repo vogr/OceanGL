@@ -23,7 +23,7 @@ void hierarchy_mesh_drawable_display_skeleton::init(GLuint shader_segment_immedi
     shader_mesh = shader_mesh_arg;
 
     segment_drawer.init();
-    frame_visual = mesh_primitive_frame();
+    frame_visual = mesh_drawable{mesh_primitive_frame()};
     frame_visual.uniform.transform.scaling = 0.1f;
 
     initialized = true;

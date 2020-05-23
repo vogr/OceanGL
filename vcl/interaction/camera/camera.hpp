@@ -57,5 +57,5 @@ struct camera_scene
 
 /** Compute a 4x4 perspective matrix */
 mat4 perspective_matrix(float angle_of_view, float image_aspect, float z_near, float z_far);
-
+mat4 look_at(vcl::vec3 eye, vcl::vec3 target, vcl::vec3 up);
 }
