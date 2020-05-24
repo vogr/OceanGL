@@ -33,15 +33,12 @@ void CameraPhysics::move_and_slide(vcl::camera_scene & camera, vcl::vec3 move_di
     camera.translation.z = - (terrain_height + my_height);
     vcl::vec3 tn = terrain_normal(uv.x,uv.y);
     float vnorm = vcl::norm(velocity);
-    std::cout << "tn=" << tn << "\n";
-    std::cout << "vbefore=" << camera.orientation * velocity << "\n";
     // v in view coords -> O*v in world coords
     // v = O.t ( O*v - dot((O*v), N)N) where N is terrain normal in world coordinates
     // v = v - dot((O*v), N) O.t*N
 
     // here we slide with minimal energy loss
     velocity = 0.95 * (velocity - vcl::dot(camera.orientation * velocity, tn) * vcl::transpose(camera.orientation) * tn);
-    std::cout << "vafter=" << camera.orientation * velocity << "\n\n";
   }
 }
 
