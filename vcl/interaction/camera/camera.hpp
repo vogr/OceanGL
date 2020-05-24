@@ -9,19 +9,31 @@ namespace vcl
 
 struct perspective_structure
 {
-    float angle_of_view;
-    float image_aspect;
-    float z_near;
-    float z_far;
+    float angle_of_view {50*3.14159f/180};
+    float z_near {0};
+    float z_far {1};
 
-    perspective_structure();
-    perspective_structure(float angle_of_view, float image_aspect, float z_near, float z_far);
+    perspective_structure() = default;
+    perspective_structure(float angle_of_view, int width, int height, float z_near, float z_far);
+
+    void set_dims(int _width, int _height) {
+      width = _width;
+      height = _height;
+      image_aspect = static_cast<float>(width) / height;
+    }
+
+    int get_width() const {return width;};
+    int get_height() const {return height;}
 
     mat4 matrix() const;
     mat4 matrix_inverse() const;
+private:
+    float image_aspect {1.};
+    int width {1024};
+    int height {1024};
 };
 
-enum camera_control_type {camera_control_trackball, camera_control_spherical_coordinates};
+enum camera_control_type {camera_control_trackball, camera_control_spherical_coordinates, camera_first_person};
 
 /** Structure handling a camera.
     The camera handle internally
@@ -44,7 +56,7 @@ struct camera_scene
     /** Return the corresponding center of camera */
     vec3 camera_position() const;
 
-    camera_control_type camera_type = camera_control_trackball;
+    camera_control_type camera_type = camera_control_spherical_coordinates;
     vec2 spherical_coordinates = {0,0};
 
     // Apply transformation to camera

@@ -35,8 +35,5 @@ namespace vcl {
         // Id to the caustices texture that will be used to draw.
         // Should be changed on each iteration.
         GLuint caustics_sprite_id{0};
-
-        int SHADOW_FBO_HEIGHT = 2048;
-        int SHADOW_FBO_WIDTH = 2048;
     };
 }

@@ -12,6 +12,14 @@ light_animation_data::light_animation_data(GLuint shader0, GLuint shader1)
   shader_pass1{shader1}
 {
 
+  int const SHADOW_FBO_HEIGHT = 2048;
+  int const SHADOW_FBO_WIDTH = 2048;
+
+  light_camera.orientation = rotation_from_axis_angle_mat3({1, 0, 0}, 20 * M_PI / 180);
+  light_camera.translation = {0, 100, -200};
+  light_camera.perspective = perspective_structure(3 * M_PI / 2, SHADOW_FBO_WIDTH, SHADOW_FBO_HEIGHT, 0.01f, 500.0f);
+
+
   // Create FBO for depth data when viewed from the light source POV
   opengl_debug();
   glGenFramebuffers(1, &light_view_fbo);
@@ -61,8 +69,5 @@ light_animation_data::light_animation_data(GLuint shader0, GLuint shader1)
 
 // Setup light camera
 
-  light_camera.orientation = rotation_from_axis_angle_mat3({1, 0, 0}, 20 * M_PI / 180);
-  light_camera.translation = {0, 100, -200};
-  light_camera.perspective = perspective_structure(3 * M_PI / 2, 1, 0.01f, 500.0f);
 
 }

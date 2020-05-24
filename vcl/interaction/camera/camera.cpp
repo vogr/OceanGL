@@ -6,12 +6,8 @@
 namespace vcl
 {
 
-perspective_structure::perspective_structure()
-    :angle_of_view(50*3.14159f/180), image_aspect(1), z_near(0), z_far(1)
-{}
-
-perspective_structure::perspective_structure(float angle_of_view_arg, float image_aspect_arg, float z_near_arg, float z_far_arg)
-    :angle_of_view(angle_of_view_arg), image_aspect(image_aspect_arg), z_near(z_near_arg), z_far(z_far_arg)
+perspective_structure::perspective_structure(float angle_of_view_arg, int _width, int _height, float z_near_arg, float z_far_arg)
+    :angle_of_view(angle_of_view_arg), width{_width}, height{_height}, z_near(z_near_arg), z_far(z_far_arg), image_aspect(static_cast<float>(_width) / _height)
 {}
 
 mat4 perspective_structure::matrix() const

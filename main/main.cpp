@@ -117,8 +117,8 @@ int main()
 
 void window_size_callback(GLFWwindow* /*window*/, int width, int height)
 {
-    glViewport(0, 0, width, height);
-    scene.camera.perspective.image_aspect = width / static_cast<float>(height);;
+    /* The viewport is set at the beginning of the drawing pass */
+    scene.camera.perspective.set_dims(width, height);
 }
 
 void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)

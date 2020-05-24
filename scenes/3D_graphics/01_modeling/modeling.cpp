@@ -108,7 +108,7 @@ void scene_model::frame_draw(std::map<std::string,GLuint>& shaders, scene_struct
   // Begin with a cleared off-screen framebuffer to store depth information
   glBindFramebuffer(GL_FRAMEBUFFER, scene.light_data.light_view_fbo);
   glClear(GL_DEPTH_BUFFER_BIT);
-  int width = scene.light_data.SHADOW_FBO_HEIGHT, height = scene.light_data.SHADOW_FBO_HEIGHT;
+  int width = scene.light_data.light_camera.perspective.get_width(), height = scene.light_data.light_camera.perspective.get_height();
 
   for (auto pass : {DrawType::PASS0, DrawType::PASS1}) {
     if(pass == DrawType::PASS1) {
