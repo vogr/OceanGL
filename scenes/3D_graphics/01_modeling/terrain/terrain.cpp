@@ -49,8 +49,7 @@ float evaluate_terrain_z(float u, float v)
   // Evaluate Perlin noise
   const float noise = perlin(scaling*u, scaling*v, octave, persistency);
   z += height * noise;
-
-  return z;
+   return z;
 }
 
 // Evaluate 3D position of the terrain for any (u,v) \in [0,1]

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <scenes/3D_graphics/01_modeling/controls/controls.hpp>
 #include "main/scene_base/base.hpp"
 
 #include "models/AnimatedBird.h"
@@ -36,8 +37,18 @@ struct scene_model : scene_base
     void setup_data(std::map<std::string,GLuint>& shaders, scene_structure& scene, gui_structure& gui);
     void frame_draw(std::map<std::string,GLuint>& shaders, scene_structure& scene, gui_structure& gui);
 
+    // Control callbacks
+    void keyboard_input(scene_structure& scene, GLFWwindow* window, int key, int scancode, int action, int mods);
+
+    timer_basic main_timer;
+
     void set_gui();
     gui_scene_structure gui_scene;
+
+    /**
+     * Animation
+     */
+    CameraPhysics camera_physics;
 
     /**
      * Models and visual elements

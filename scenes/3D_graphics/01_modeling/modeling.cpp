@@ -2,6 +2,7 @@
 #include "modeling.hpp"
 #include "helpers/trajectory_creators.h"
 
+
 #ifdef SCENE_3D_GRAPHICS
 
 // Add vcl namespace within the current one - Allows to use function from vcl library without explicitely preceeding their name with vcl::
@@ -12,12 +13,20 @@ using namespace vcl;
 
 /** This function is called before the beginning of the animation loop
     It is used to initialize all part-specific data */
-void scene_model::setup_data(std::map<std::string,GLuint>& shaders, scene_structure& scene, gui_structure& ) {
+void scene_model::setup_data(std::map<std::string,GLuint>& shaders, scene_structure& scene, gui_structure& gui) {
 
   // Setup initial camera mode and position
-  scene.camera.camera_type = camera_control_spherical_coordinates;
-  scene.camera.scale = 10.0f;
-  scene.camera.apply_rotation(0, 0, 0, 1.2f);
+
+  // Hide cursor
+  glfwSetInputMode(gui.window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+  // Use raw cursor input
+  if (glfwRawMouseMotionSupported())
+    glfwSetInputMode(gui.window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+
+  scene.camera.scale = 0.0f;
+  scene.camera.translation = {0,0,-10};
+  scene.camera.apply_rotation(0, 0, 0, M_PI / 3);
+
 
   int const N_TREES = 240;
   double const TREE_RADIUS = 0.2;
@@ -70,6 +79,9 @@ void scene_model::frame_draw(std::map<std::string,GLuint>& shaders, scene_struct
   /**
    * Animation loop
    */
+  float dt = main_timer.update();
+  camera_physics.move_and_slide(scene.camera, get_move_dir_from_user_input(gui.window), dt);
+
   shark.update();
   // choose correct sprite in light animation
   {

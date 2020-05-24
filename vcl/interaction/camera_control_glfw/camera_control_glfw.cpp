@@ -10,7 +10,7 @@ enum class camera_action_state {none, translation, rotation, scale, translation_
 void camera_control_glfw::update_mouse_move(camera_scene& camera, GLFWwindow* window, float x1, float y1)
 {
     assert(window!=nullptr);
-
+  /*
     // Get type of click (left, right), is CTRL pressed
     const bool mouse_click_left  = (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_LEFT )==GLFW_PRESS);
     const bool mouse_click_right = (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_RIGHT)==GLFW_PRESS);
@@ -23,18 +23,19 @@ void camera_control_glfw::update_mouse_move(camera_scene& camera, GLFWwindow* wi
         y0 = y1;
         return;
     }
+  // Get window size
+  int width, height;
+  glfwGetWindowSize(window, &width, &height);
+  const float w = static_cast<float>(width);
+  const float h = static_cast<float>(height);
 
 
 
 
-    // Get window size
-    int width, height;
-    glfwGetWindowSize(window, &width, &height);
-    const float w = static_cast<float>(width);
-    const float h = static_cast<float>(height);
 
     // Set action state accordingly
     camera_action_state state = camera_action_state::none;
+
 
     if(!mouse_click_left && !mouse_click_right)
         state = camera_action_state::none;
@@ -46,7 +47,6 @@ void camera_control_glfw::update_mouse_move(camera_scene& camera, GLFWwindow* wi
         state = camera_action_state::scale;
     else if( mouse_click_right && key_ctrl )
         state = camera_action_state::translation_depth;
-
 
     // ************************************************* //
     // Compute transformation to apply on the camera
@@ -85,10 +85,31 @@ void camera_control_glfw::update_mouse_move(camera_scene& camera, GLFWwindow* wi
         camera.apply_translation_orthogonal_to_screen_plane( translation_magnitude );
     }
 
+  // Update previous click position
+  x0 = x1;
+  y0 = y1;
 
-    // Update previous click position
-    x0 = x1;
-    y0 = y1;
+    */
+
+  // Free camera : always rotation
+  // Get window size
+  int width, height;
+  glfwGetWindowSize(window, &width, &height);
+  const float w = static_cast<float>(width);
+  const float h = static_cast<float>(height);
+  // relative position on screen
+  const float ux0 = 2*x0/float(w)-1;
+  const float uy0 = 1-2*y0/float(h);
+
+  const float ux1 = 2*x1/float(w)-1;
+  const float uy1 = 1-2*y1/float(h);
+
+  // apply rotation
+  camera.apply_rotation(ux0, uy0, ux1, uy1);
+
+  // Update previous click position
+  x0 = x1;
+  y0 = y1;
 
 }
 

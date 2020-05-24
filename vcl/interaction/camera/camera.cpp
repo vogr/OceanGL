@@ -48,6 +48,7 @@ mat4 perspective_structure::matrix_inverse() const
 
 mat4 camera_scene::view_matrix() const
 {
+    // world to camera
     mat3 R = transpose(orientation);
     vec3 T = vec3{0,0,-scale} + R*translation;
 
@@ -60,6 +61,7 @@ mat4 camera_scene::view_matrix() const
 
 mat4 camera_scene::camera_matrix() const
 {
+    // camera in world
     mat3 R = orientation;
     vec3 T = R*vec3{0,0,scale} - translation;
 
@@ -172,7 +174,6 @@ void camera_scene::apply_rotation(float x0, float y0, float x1, float y1)
         const mat3 R = rotation_between_vector_mat3(p0, p1);
         orientation = orientation * transpose(R);
     }
-
 }
 
 void camera_scene::apply_scaling(float s)
