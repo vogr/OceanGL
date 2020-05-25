@@ -21,7 +21,7 @@ struct mesh_drawable
 public:
     mesh_drawable() = default;
     /** Initialize VAO and VBO from the mesh */
-    explicit mesh_drawable(const mesh& mesh_cpu, GLuint shader = 0, GLuint texture_id = 0);
+    explicit mesh_drawable(mesh mesh_arg, GLuint shader = 0, GLuint texture_id = 0);
 
 
     /** Clear buffers (VBO, VAO, etc) */

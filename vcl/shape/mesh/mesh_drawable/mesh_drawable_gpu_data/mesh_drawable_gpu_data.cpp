@@ -24,14 +24,13 @@ mesh_drawable_gpu_data& mesh_drawable_gpu_data::operator=(mesh_drawable_gpu_data
   return *this;
 }
 
-mesh_drawable_gpu_data::mesh_drawable_gpu_data(const mesh &mesh_cpu_arg)
+mesh_drawable_gpu_data::mesh_drawable_gpu_data(mesh mesh_cpu)
 {
     // Doesn't assign anything if there is no position
-    if(mesh_cpu_arg.position.size()==0)
+    if(mesh_cpu.position.size()==0)
         return;
 
-    // temp copy of the mesh to fill all empty fields
-    mesh mesh_cpu = mesh_cpu_arg;
+    // fill all empty fields (argument is a copy, or rvalue reference)
     mesh_cpu.fill_empty_fields();
 
     // Fill VBO for position

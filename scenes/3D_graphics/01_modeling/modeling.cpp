@@ -20,8 +20,9 @@ void scene_model::setup_data(std::map<std::string,GLuint>& shaders, scene_struct
   // Hide cursor
   glfwSetInputMode(gui.window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
   // Use raw cursor input
-  if (glfwRawMouseMotionSupported())
+  if (glfwRawMouseMotionSupported()) {
     glfwSetInputMode(gui.window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+  }
 
   scene.camera.scale = 0.0f;
   scene.camera.translation = {0,0,-10};
@@ -32,7 +33,11 @@ void scene_model::setup_data(std::map<std::string,GLuint>& shaders, scene_struct
   double const TREE_RADIUS = 0.2;
 
   // Create visual terrain surface
-  terrain = create_terrain(create_texture_gpu( image_load_png("scenes/3D_graphics/01_modeling/assets/floor.png"), GL_REPEAT, GL_REPEAT));
+  terrain = ChunkLoader{
+    create_texture_gpu( image_load_png("scenes/3D_graphics/01_modeling/assets/floor.png"), GL_REPEAT, GL_REPEAT),
+    7
+  };
+
   tree_model = std::make_shared<hierarchy_mesh_drawable>(TreeElement::create_tree_model(scene.texture_white));
   shark_model = mesh_drawable{mesh_load_file_obj("scenes/3D_graphics/01_modeling/assets/shark/Shark.obj")};
   shark_model.texture_id = create_texture_gpu( image_load_png("scenes/3D_graphics/01_modeling/assets/shark/greatwhiteshark.png"), GL_REPEAT, GL_REPEAT);
@@ -90,6 +95,13 @@ void scene_model::frame_draw(std::map<std::string,GLuint>& shaders, scene_struct
     scene.light_data.caustics_sprite_id = caustics_animation_sprites_ids[caustics_sprite_number];
   }
 
+  {
+    auto p = scene.camera.camera_position();
+    // Load chunks around player
+    terrain.update_center(p);
+    // Move light source (because caustics texture are only visible in a small radius around the light source)
+    scene.light_data.light_camera.translation = {-p.x, -p.y, -300};
+  }
 
 
   /**
@@ -132,7 +144,7 @@ void scene_model::frame_draw(std::map<std::string,GLuint>& shaders, scene_struct
     // set correct viewport before drawing.
     glViewport(0, 0, width, height);
 
-    draw(terrain, scene.camera, scene.light_data, pass);
+    terrain.draw(scene.camera, scene.light_data, pass);
     for(vec2 uv : {vec2{0.2, 0.3}, {0.2,0.9}, {0.8, 0.2}, {0.4,0.6}, {0.7, 0.5}}) {
       tree.transform = affine_transform{evaluate_terrain(uv.x, uv.y)};
       tree.draw(scene.camera, scene.light_data, pass);

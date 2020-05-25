@@ -12,10 +12,19 @@ namespace vcl {
     public:
         light_animation_data() = default;
         light_animation_data(GLuint shader0, GLuint shader1);
+        mat4 orthographic_projection_matrix() const;
 
+
+        // /!\ We use a camera but
         camera_scene light_camera;
+
+
         GLuint shader_pass0{0};
         GLuint shader_pass1{0};
+
+        float view_size = 800.;
+        float z_near = 0.01f;
+        float z_far = 500.f;
 
         // framebuffer object : will be used as rendering target in first
         // pass (off-line rendering). It will contain a simple texture `depth`

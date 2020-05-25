@@ -9,8 +9,8 @@ void draw_pass0(const mesh_drawable& drawable, light_animation_data const & ligh
 void draw_pass1(const mesh_drawable& drawable, const camera_scene& user_camera, light_animation_data const & light_data);
 
 
-mesh_drawable::mesh_drawable(const mesh& mesh_arg, GLuint shader_arg, GLuint texture_id_arg)
-    :data(std::make_shared<mesh_drawable_gpu_data>(mesh_arg)),uniform(),shader(shader_arg),texture_id(texture_id_arg)
+mesh_drawable::mesh_drawable(mesh mesh_arg, GLuint shader_arg, GLuint texture_id_arg)
+    :data(std::make_shared<mesh_drawable_gpu_data>(std::move(mesh_arg))),uniform(),shader(shader_arg),texture_id(texture_id_arg)
 {}
 
 void mesh_drawable::clear()
@@ -132,7 +132,7 @@ void draw_pass0(const mesh_drawable& drawable, light_animation_data const & ligh
   if (prepare_draw(drawable, light_data.shader_pass0, light_data.light_view_fbo)) {
 
     // Prepare camera (viewing from light source)
-    uniform(light_data.shader_pass0, "light_perspective", light_data.light_camera.perspective.matrix());         opengl_debug();
+    uniform(light_data.shader_pass0, "light_perspective", light_data.orthographic_projection_matrix());         opengl_debug();
     uniform(light_data.shader_pass0, "light_view", light_data.light_camera.view_matrix());                       opengl_debug();
 
     vcl::draw(*drawable.data); opengl_debug();
@@ -153,9 +153,10 @@ void draw_pass1(const mesh_drawable& drawable, const camera_scene& user_camera, 
     uniform(light_data.shader_pass1, "camera_position", user_camera.camera_position());        opengl_debug();
 
     // Light camera
-    uniform(light_data.shader_pass1, "light_perspective", light_data.light_camera.perspective.matrix());         opengl_debug();
+    uniform(light_data.shader_pass1, "light_perspective", light_data.orthographic_projection_matrix());         opengl_debug();
     uniform(light_data.shader_pass1, "light_view", light_data.light_camera.view_matrix());                       opengl_debug();
     uniform(light_data.shader_pass1, "light_position", light_data.light_camera.camera_position());        opengl_debug();
+    uniform(light_data.shader_pass1, "light_view_size", light_data.view_size); opengl_debug();
 
 
 

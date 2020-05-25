@@ -15,9 +15,11 @@ light_animation_data::light_animation_data(GLuint shader0, GLuint shader1)
   int const SHADOW_FBO_HEIGHT = 2048;
   int const SHADOW_FBO_WIDTH = 2048;
 
-  light_camera.orientation = rotation_from_axis_angle_mat3({1, 0, 0}, 20 * M_PI / 180);
-  light_camera.translation = {0, 100, -200};
-  light_camera.perspective = perspective_structure(3 * M_PI / 2, SHADOW_FBO_WIDTH, SHADOW_FBO_HEIGHT, 0.01f, 500.0f);
+  //light_camera.orientation = rotation_from_axis_angle_mat3({1, 0, 0}, 20 * M_PI / 180);
+  light_camera.translation = {0, 0, -200};
+  //  The perspective structure only stores the size of the FBO, and is not used for the perspective projection!
+  // Indeed, we use an orthographic projection for this
+  light_camera.perspective = perspective_structure(0, SHADOW_FBO_WIDTH, SHADOW_FBO_HEIGHT, 0., 0.0f);
 
 
   // Create FBO for depth data when viewed from the light source POV
@@ -70,4 +72,21 @@ light_animation_data::light_animation_data(GLuint shader0, GLuint shader1)
 // Setup light camera
 
 
+}
+
+mat4 light_animation_data::orthographic_projection_matrix() const {
+  /*
+   * source: https://www.scratchapixel.com/lessons/3d-basic-rendering/perspective-and-orthographic-projection-matrix/orthographic-projection-matrix
+   * box [l, r] x [b, t] x [z_near, z_far]
+   * to [-1, 1] [-1, 1], [-1, 1] with orhographic projection
+   * r - l = view_size
+   * t - b = view_size
+   */
+
+  return {
+    2.f / view_size, 0, 0, 0,
+    0, 2.f / view_size, 0, 0,
+    0, 0, -2.f / (z_far - z_near), - (z_far + z_near) / (z_far - z_near),
+    0, 0, 0, 1
+  };
 }

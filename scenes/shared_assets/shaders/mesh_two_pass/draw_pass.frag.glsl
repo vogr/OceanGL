@@ -19,6 +19,7 @@ uniform sampler2DShadow depths_in_light_ref_sampler;
 
 uniform vec3 camera_position;
 uniform vec3 light_position;
+uniform float light_view_size;
 
 uniform vec3 color     = vec3(1.0, 1.0, 1.0);
 uniform float color_alpha = 1.0;
@@ -40,8 +41,16 @@ void main()
     float view_from_light = 0.;
     // Logic if `depths_in_light_ref_sampler` is a sampler2DShadow
     if (fragment.light_view_coords.w >= 0) {
+        // Fragment is in view
+
+        // Epsilon for depth test (on z) in pre-normalized coordinates
         vec4 eps = vec4(0,0,0.0000005,0) * fragment.light_view_coords.w;
+
+        // Test if fragment.light_view_coords.z < depths_in_light_ref_sampler at coordinates fragment.light_view_coords.xy
+        // (after normalization)
         view_from_light = textureProj(depths_in_light_ref_sampler, fragment.light_view_coords - eps);
+        // returns value in [0,1] : 1 if true, 0 if false ; values in between are obtained by
+        // interpolating on the neighborings coordinates
     }
 
     /*
@@ -54,8 +63,12 @@ void main()
 
     // illumation takes into acount :
     // - if there is a direct line btw light source and object (with `view_from_light`, a value in [0,1])
-    // - the color of the caustics animation at that point
-    float caustics_illumination = textureProj(caustics_texture_sampler, vec3(fragment.light_view_coords.xy * 10, fragment.light_view_coords.w)).r;
+    // - the color of the caustics animation at that point (with value `caustics_illumination`)
+
+    // multiply coordinates by a factor to make the pattern smaller
+    // fragment.light_view_coords.xy -> coords in light view in [0,1]
+    // light_position.xy + light_view_size *  fragment.light_view_coords.xy -> w,y cords in world space
+    float caustics_illumination = textureProj(caustics_texture_sampler, vec3((light_position.xy + light_view_size * fragment.light_view_coords.xy) / 40 , fragment.light_view_coords.w)).r;
     float illumination = view_from_light * 0.7 * caustics_illumination;
 
     float diffuse_value  = illumination * diffuse * clamp( dot(u,n), 0.0, 1.0);

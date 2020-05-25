@@ -16,7 +16,7 @@ struct mesh_drawable_gpu_data {
     mesh_drawable_gpu_data(mesh_drawable_gpu_data &&) noexcept;
     mesh_drawable_gpu_data& operator=(mesh_drawable_gpu_data &&) noexcept;
 
-    explicit mesh_drawable_gpu_data(const mesh& mesh_cpu);
+    explicit mesh_drawable_gpu_data(mesh mesh_cpu);
 
     /** Clear buffers */
     void clear();

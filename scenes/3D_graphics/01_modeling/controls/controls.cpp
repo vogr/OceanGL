@@ -27,7 +27,6 @@ void CameraPhysics::move_and_slide(vcl::camera_scene & camera, vcl::vec3 move_di
 
   float terrain_height = evaluate_terrain_z(uv.x, uv.y);
   float my_height = 0.1;
-  std::cout << "vbefore=" << camera.orientation * velocity << "\n\n";
 
   if ((-camera.translation.z) < (terrain_height + my_height)) {
     camera.translation.z = - (terrain_height + my_height);
@@ -87,5 +86,35 @@ void scene_model::keyboard_input(scene_structure& scene, GLFWwindow* window, int
   if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
     std::cerr << "Stopping now.\n";
     abort();
+  }
+  else if (key == GLFW_KEY_F11 && action == GLFW_PRESS) {
+    if (glfwGetWindowMonitor(window) == nullptr) {
+      // Windowed mode, switch to fullscreen
+      auto primary_monitor = glfwGetPrimaryMonitor();
+      auto video_mode = glfwGetVideoMode(primary_monitor);
+      glfwSetWindowMonitor(window, glfwGetPrimaryMonitor(), 0, 0, video_mode->width, video_mode->height, GLFW_DONT_CARE);
+      // is resize callback called ?
+      //scene.camera.perspective.set_dims(width_pm, height_pm);
+    }
+    else {
+      // currently fullscreen, set windowed
+      glfwSetWindowMonitor(window, nullptr, 0, 0, 1280, 720 , GLFW_DONT_CARE);
+    }
+  }
+  else if (key == GLFW_KEY_F6 && action == GLFW_PRESS) {
+    auto cursor = glfwGetInputMode(window, GLFW_CURSOR);
+    if (cursor == GLFW_CURSOR_DISABLED) {
+      // Re-enable cursor
+      glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+    }
+    else {
+      // Hide cursor
+      glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+      // Use raw cursor input
+      if (glfwRawMouseMotionSupported()) {
+        glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+      }
+    }
+
   }
 }
