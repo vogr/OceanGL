@@ -15,8 +15,7 @@ using namespace vcl;
     It is used to initialize all part-specific data */
 void scene_model::setup_data(std::map<std::string,GLuint>& shaders, scene_structure& scene, gui_structure& gui) {
 
-  // Setup initial camera mode and position
-
+  /** Setup user cursor */
   // Hide cursor
   glfwSetInputMode(gui.window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
   // Use raw cursor input
@@ -24,36 +23,13 @@ void scene_model::setup_data(std::map<std::string,GLuint>& shaders, scene_struct
     glfwSetInputMode(gui.window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
   }
 
+  /** Setup user camera */
   scene.camera.scale = 0.0f;
+  // Initial position :
   scene.camera.translation = {0,0,-10};
   scene.camera.apply_rotation(0, 0, 0, M_PI / 3);
 
-
-  int const N_TREES = 240;
-  double const TREE_RADIUS = 0.2;
-
-  // Create visual terrain surface
-  terrain = ChunkLoader{
-    create_texture_gpu( image_load_png("scenes/3D_graphics/01_modeling/assets/floor.png"), GL_REPEAT, GL_REPEAT),
-    7
-  };
-
-  tree_model = std::make_shared<hierarchy_mesh_drawable>(TreeElement::create_tree_model(scene.texture_white));
-  shark_model = mesh_drawable{mesh_load_file_obj("scenes/3D_graphics/01_modeling/assets/shark/Shark.obj")};
-  shark_model.texture_id = create_texture_gpu( image_load_png("scenes/3D_graphics/01_modeling/assets/shark/greatwhiteshark.png"), GL_REPEAT, GL_REPEAT);
-  shark = AnimatedFish(shark_model);
-  shark.trajectory.init(make_shark_trajectory_keyframes());
-  bird.build(shaders, make_shark_trajectory_keyframes());
-  
-  /*
-  for(int i = 0 ; i < N_TREES; i++) {
-    vec3 next_pos = get_available_position(elements, TREE_RADIUS);
-    auto el = TreeElement{tree_model, affine_transform{next_pos}, TREE_RADIUS};
-    elements.push_back(std::move(el));
-  }
-  */
-
-  // Setup light data
+  /** Setup light source */
   scene.light_data = light_animation_data{shaders["mesh_depth_pass"], shaders["mesh_draw_pass"]};
 
   // Load the 32 sprites of the the caustics animation
@@ -72,12 +48,32 @@ void scene_model::setup_data(std::map<std::string,GLuint>& shaders, scene_struct
   caustics_animation_timer.t_min = 0.;
   caustics_animation_timer.t_max = 32.;
   caustics_animation_timer.start();
+
+
+  /** Prepare drawable elements : meshes and textures */
+
+  // Prepare chunk loader
+  terrain = ChunkLoader{
+    create_texture_gpu( image_load_png("scenes/3D_graphics/01_modeling/assets/floor.png"), GL_REPEAT, GL_REPEAT),
+    7
+  };
+
+  // Prepare shark
+  shark_model = mesh_drawable{mesh_load_file_obj("scenes/3D_graphics/01_modeling/assets/shark/Shark.obj")};
+  shark_model.texture_id = create_texture_gpu( image_load_png("scenes/3D_graphics/01_modeling/assets/shark/greatwhiteshark.png"), GL_REPEAT, GL_REPEAT);
+  shark = AnimatedFish(shark_model);
+  shark.trajectory.init(make_shark_trajectory_keyframes());
+  shark.model.uniform.shading.specular = 0.1;
+
+  // Prepare bird
+  bird.build(shaders, make_shark_trajectory_keyframes());
+
 }
 
 
 
 /** This function is called at each frame of the animation loop.
-    It is used to compute time-varying argument and perform data data drawing */
+    It is used to compute time-varying argument and perform data drawing */
 void scene_model::frame_draw(std::map<std::string,GLuint>& shaders, scene_structure& scene, gui_structure& gui)
 {
 
@@ -86,37 +82,39 @@ void scene_model::frame_draw(std::map<std::string,GLuint>& shaders, scene_struct
    */
   float dt = main_timer.update();
   camera_physics.move_and_slide(scene.camera, get_move_dir_from_user_input(gui.window), dt);
-
-  shark.update();
-  // choose correct sprite in light animation
   {
+    // Load the chunks around the player
+    auto p = scene.camera.camera_position();
+    terrain.update_center(p);
+    // Move light source (because caustics texture are only visible in a small radius around the light source)
+    scene.light_data.light_camera.translation = {-p.x, -p.y, -150};
+  }
+
+  // Update shark position
+  shark.update();
+
+  {
+    // choose correct sprite in caustics animation
     caustics_animation_timer.update();
     int caustics_sprite_number = static_cast<int>(caustics_animation_timer.t);
     scene.light_data.caustics_sprite_id = caustics_animation_sprites_ids[caustics_sprite_number];
-  }
-
-  {
-    auto p = scene.camera.camera_position();
-    // Load chunks around player
-    terrain.update_center(p);
-    // Move light source (because caustics texture are only visible in a small radius around the light source)
-    scene.light_data.light_camera.translation = {-p.x, -p.y, -300};
   }
 
 
   /**
    * Rendering loop
    */
+   // Cull back faces
   glEnable(GL_CULL_FACE);
   glCullFace(GL_BACK);
   glFrontFace(GL_CCW);
 
+  // Update GUI options
   set_gui();
+
+  //
   glEnable( GL_POLYGON_OFFSET_FILL ); // avoids z-fighting when displaying wireframe
   glPolygonOffset( 1.0, 1.0 );
-
-  TreeElement tree {tree_model, affine_transform{evaluate_terrain(0.2,0.3)}, 1.f};
-
 
   /**
    * Two pass rendering :
@@ -145,15 +143,8 @@ void scene_model::frame_draw(std::map<std::string,GLuint>& shaders, scene_struct
     glViewport(0, 0, width, height);
 
     terrain.draw(scene.camera, scene.light_data, pass);
-    for(vec2 uv : {vec2{0.2, 0.3}, {0.2,0.9}, {0.8, 0.2}, {0.4,0.6}, {0.7, 0.5}}) {
-      tree.transform = affine_transform{evaluate_terrain(uv.x, uv.y)};
-      tree.draw(scene.camera, scene.light_data, pass);
-      shark.draw(scene.camera, scene.light_data, pass);
-      bird.draw(scene.camera, scene.light_data, pass);
-    }
-
-    //shark.trajectory.draw(scene.camera, shaders);
-
+    shark.draw(scene.camera, scene.light_data, pass);
+    bird.draw(scene.camera, scene.light_data, pass);
   }
 
 

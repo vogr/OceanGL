@@ -55,7 +55,6 @@ struct scene_model : scene_base
      **/
     ChunkLoader terrain;
 
-    std::shared_ptr<hierarchy_mesh_drawable> tree_model;
     mesh_drawable shark_model;
 
     AnimatedFish shark;

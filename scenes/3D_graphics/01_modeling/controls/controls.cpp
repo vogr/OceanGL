@@ -6,6 +6,7 @@
 
 
 void CameraPhysics::move_in_dir(vcl::camera_scene & camera, vcl::vec3 move_dir, float dt) {
+  /* Give impulsion to camera in the direction given by `move_dir` */
 
   vcl::vec3 impulsion = 15 * move_dir;
   vcl::vec3 friction = - 0.8 * velocity;
@@ -22,16 +23,23 @@ void CameraPhysics::move_in_dir(vcl::camera_scene & camera, vcl::vec3 move_dir, 
 }
 
 void CameraPhysics::move_and_slide(vcl::camera_scene & camera, vcl::vec3 move_dir, float dt) {
-  move_in_dir(camera, move_dir, dt);
-  vcl::vec2 uv = terrain_xy_to_uv({-camera.translation.x, -camera.translation.y});
+  /* Move camera in direction given by `move_dir` and handle collisions with ground */
 
+  move_in_dir(camera, move_dir, dt);
+
+  // Find terrain height where player stands
+  vcl::vec2 uv = terrain_xy_to_uv({-camera.translation.x, -camera.translation.y});
   float terrain_height = evaluate_terrain_z(uv.x, uv.y);
+
+  // Stop before distance to ground is 0, leave a gap
   float my_height = 0.1;
 
   if ((-camera.translation.z) < (terrain_height + my_height)) {
+    /* Collision ! Move back up, and remove normal component from velocity */
+
     camera.translation.z = - (terrain_height + my_height);
     vcl::vec3 tn = terrain_normal(uv.x,uv.y);
-    float vnorm = vcl::norm(velocity);
+
     // v in view coords -> O*v in world coords
     // v = O.t ( O*v - dot((O*v), N)N) where N is terrain normal in world coordinates
     // v = v - dot((O*v), N) O.t*N
@@ -42,6 +50,11 @@ void CameraPhysics::move_and_slide(vcl::camera_scene & camera, vcl::vec3 move_di
 }
 
 vcl::vec3 get_move_dir_from_user_input(GLFWwindow* window) {
+  // Prepare a movement direction vector by adding a vector for each key that is currently being held
+  // by the player, then normalize the vector obtained (and multiply by a factor if sprint is held)
+  // ZQSD + SPACE + LCTRL for movement
+  // Shift for sprint
+
   vcl::vec3 move_dir = {0,0,0};
   if (glfwGetKey( window, GLFW_KEY_W ) == GLFW_PRESS){
     // Forward
@@ -64,6 +77,7 @@ vcl::vec3 get_move_dir_from_user_input(GLFWwindow* window) {
     move_dir += {0, -1 , 0};
   }
   else if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
+
     move_dir += {0, 1 , 0};
   }
 
@@ -84,10 +98,12 @@ vcl::vec3 get_move_dir_from_user_input(GLFWwindow* window) {
 
 void scene_model::keyboard_input(scene_structure& scene, GLFWwindow* window, int key, int scancode, int action, int mods) {
   if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
+    /* Escape key -> quit game */
     std::cerr << "Stopping now.\n";
     abort();
   }
   else if (key == GLFW_KEY_F11 && action == GLFW_PRESS) {
+    /* F11 -> Switch between fullscreen and windowed */
     if (glfwGetWindowMonitor(window) == nullptr) {
       // Windowed mode, switch to fullscreen
       auto primary_monitor = glfwGetPrimaryMonitor();
@@ -102,6 +118,7 @@ void scene_model::keyboard_input(scene_structure& scene, GLFWwindow* window, int
     }
   }
   else if (key == GLFW_KEY_F6 && action == GLFW_PRESS) {
+    /* F6 -> Switch between captive pointer and free pointer */
     auto cursor = glfwGetInputMode(window, GLFW_CURSOR);
     if (cursor == GLFW_CURSOR_DISABLED) {
       // Re-enable cursor
