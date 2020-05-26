@@ -2,6 +2,8 @@
 cmake_minimum_required(VERSION 2.8)
 project(pgm)
 
+set(default_build_type "Debug")
+
 add_definitions(-DIMGUI_IMPL_OPENGL_LOADER_GLAD)
 
 # Add G++ Warning on Unix
@@ -41,8 +43,6 @@ target_compile_options(pgm
     $<$<CONFIG:Debug>:-O0 -ggdb3 -gsplit-dwarf>
     $<$<CONFIG:Release>:-O2 -march=native -flto -fno-fat-lto-objects> # release: 03 is implied, add back 02
     $<$<CONFIG:RelWithDebInfo>:-O2 -march=native -flto -fno-fat-lto-objects -ggdb3 -gsplit-dwarf> # relwithdebinfo: 02 is implied
-    -Wp,-D_FORTIFY_SOURCE=2  -Wp,-D_GLIBCXX_ASSERTIONS
-    -fexceptions -fasynchronous-unwind-tables -fstack-protector-strong -fstack-clash-protection -fcf-protection
     PRIVATE -Wall -Wextra -Wpedantic -Wformat=2 -Wswitch-default -Wswitch-enum -Wfloat-equal -Wno-conversion
     -pedantic-errors -Werror=format-security
     -fdiagnostics-color=always
