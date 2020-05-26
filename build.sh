@@ -1,12 +1,16 @@
 #!/usr/bin/env bash
 
-# Build the c++ extension using CMake.
-# This script will not install the extension.
-# To install the extension (and build it if it not already) run
-#     python -m pip install .
-# in this directory.
+# Build the program in the directory "./build"
 
+# By default, but the program in Release mode
+#   $ ./build.sh
 
+# Alternatively, you may specify a release type
+#   $ ./build.sh "Release"
+# or
+#   $ ./build.sh "Debug"
+# or
+#   $ ./build.sh "RelWithDebInfo"
 
 cd "$(dirname "$0")" &&
 cmake -S . -B "./build" -DCMAKE_BUILD_TYPE=${1:Release} &&
