@@ -60,7 +60,7 @@ void scene_model::setup_data(std::map<std::string,GLuint>& shaders, scene_struct
     create_texture_gpu( image_load_png("scenes/3D_graphics/01_modeling/assets/floor.png"), GL_REPEAT, GL_REPEAT),
     RENDER_RADIUS
   };
-  terrain.n_billboards_per_chunk = 4;
+  terrain.n_billboards_per_chunk = 6;
 
   // Prepare shark
   shark_model = mesh_drawable{mesh_load_file_obj("scenes/3D_graphics/01_modeling/assets/shark/Shark.obj")};

@@ -35,6 +35,7 @@ ChunkLoader::ChunkLoader(GLuint _texture_id, int _radius_to_load)
       auto w = std::make_unique<CrossBillboard>(cross, affine_transform{{0,0,-2}, {}, scale}, radius);
       billboards_models.push_back(std::move(w));
     }
+    /*
     {
       // The initial transform should place the object at coordinates (0,0),
       // it will then be translated to its final position in the chunks
@@ -43,6 +44,7 @@ ChunkLoader::ChunkLoader(GLuint _texture_id, int _radius_to_load)
       auto w = std::make_unique<FlatBillboard>(flat, affine_transform{{0,0,-2}, {}, scale}, radius);
       billboards_models.push_back(std::move(w));
     }
+    */
   }
 }
 
