@@ -3,10 +3,11 @@
 #include <scenes/3D_graphics/01_modeling/controls/controls.hpp>
 #include "main/scene_base/base.hpp"
 
-#include "models/AnimatedBird.h"
 #include "models/AnimatedFish.h"
 #include "models/models.h"
 #include "models/billboards.h"
+
+#include "boids/Boid.hpp"
 
 #include "terrain/ChunkLoader.hpp"
 
@@ -46,23 +47,21 @@ struct scene_model : scene_base
     void set_gui();
     gui_scene_structure gui_scene;
 
-    /**
-     * Animation
-     */
-    CameraPhysics camera_physics;
-
-    /**
-     * Models and visual elements
-     **/
+    /** Chunk loader : terrain and billboards */
     ChunkLoader terrain;
 
+    /** Models and visual elements */
     mesh_drawable shark_model;
+    mesh_drawable fish_model;
+    std::vector<Boid> all_boids;
+
+    /** Animation */
+    CameraPhysics camera_physics;
 
     AnimatedFish shark;
-    AnimatedBird bird;
-    /************************************
-     * OpenGL objects to render caustics
-     ************************************/
+    AnimatedFish chased_fish;
+
+    /** Caustics (light effect underwater) */
     // Caustics animation.
     std::array<GLuint,32> caustics_animation_sprites_ids;
     // Animation timer

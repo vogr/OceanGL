@@ -41,24 +41,47 @@ void scene_model::setup_data(std::map<std::string,GLuint>& shaders, scene_struct
   caustics_animation_timer.start();
 
 
-  /** Prepare drawable elements : meshes and textures */
-
-  // Prepare chunk loader
+  /** Prepare chunk loader */
   int const RENDER_RADIUS = 6;
   terrain = ChunkLoader{
-    create_texture_gpu( image_load_png("scenes/3D_graphics/01_modeling/assets/floor.png"), GL_REPEAT, GL_REPEAT),
-    RENDER_RADIUS
+          create_texture_gpu( image_load_png("scenes/3D_graphics/01_modeling/assets/floor.png"), GL_REPEAT, GL_REPEAT),
+          RENDER_RADIUS
   };
   terrain.n_billboards_per_chunk = 6;
 
-  // Prepare shark
+  /** Prepare drawable elements : meshes and textures */
+
+  // Prepare shark model
   shark_model = mesh_drawable{mesh_load_file_obj("scenes/3D_graphics/01_modeling/assets/shark/Shark.obj")};
   shark_model.texture_id = create_texture_gpu( image_load_png("scenes/3D_graphics/01_modeling/assets/shark/greatwhiteshark.png"), GL_REPEAT, GL_REPEAT);
+  shark_model.uniform.shading.specular = 0.1;
+
+  // Prepare fish model
+  fish_model = mesh_drawable{mesh_load_file_obj("scenes/3D_graphics/01_modeling/assets/Fish_v2/fish.obj")};
+  fish_model.texture_id = create_texture_gpu( image_load_png("scenes/3D_graphics/01_modeling/assets/Fish_v2/fish_texture.png"), GL_REPEAT, GL_REPEAT);
+
+  /** Animated models */
+
+  // Shark
   shark = AnimatedFish(shark_model);
   shark.trajectory.init(make_shark_trajectory_keyframes());
-  shark.model.uniform.shading.specular = 0.1;
+  shark.trajectory.timer.stop();
+  shark.trajectory.timer.t = 0.1f * shark.trajectory.timer.t_min + 0.9f * shark.trajectory.timer.t_max;;
 
+  // Fish chased by shark
+  chased_fish = AnimatedFish{fish_model};
+  chased_fish.trajectory.init(make_shark_trajectory_keyframes());
+  chased_fish.trajectory.timer.stop();
+  chased_fish.trajectory.timer.t = chased_fish.trajectory.timer.t_min;
+  chased_fish.trajectory.timer.start();
+  shark.trajectory.timer.start();
 
+  // Boids
+  for(int i = 0; i < 150; i++){
+    vcl::vec3 p {rand_interval(-5,5),rand_interval(-5,5),rand_interval(5,30)};
+    vcl::vec3 d {rand_interval(-1,1),rand_interval(-1,1),rand_interval(-1,1)};
+    all_boids.emplace_back(p,d);
+  }
 
 }
 
@@ -85,14 +108,23 @@ void scene_model::frame_draw(std::map<std::string,GLuint>& shaders, scene_struct
     scene.light_data.light_camera.translation = {-p.x, -p.y, -150};
   }
 
-  // Update shark position
-  shark.update();
-
   {
     // choose correct sprite in caustics animation
     caustics_animation_timer.update();
     int caustics_sprite_number = static_cast<int>(caustics_animation_timer.t);
     scene.light_data.caustics_sprite_id = caustics_animation_sprites_ids[caustics_sprite_number];
+  }
+
+
+  // Update shark and fish positions
+  shark.update();
+  chased_fish.update();
+
+  // Move boids
+  for (int i = 0 ; i < 5 ; i++) {
+    for(Boid& f : all_boids){
+      f.update(all_boids, dt / 3);
+    }
   }
 
 
@@ -138,7 +170,14 @@ void scene_model::frame_draw(std::map<std::string,GLuint>& shaders, scene_struct
     glViewport(0, 0, width, height);
 
     shark.draw(scene.camera, scene.light_data, pass);
-    //bird.draw(scene.camera, scene.light_data, pass);
+    chased_fish.draw(scene.camera, scene.light_data, pass);
+
+    for (auto & f : all_boids) {
+      fish_model.uniform.transform.rotation = mat3{{1,0,0}, {0,1,0}, f.direction};;
+      fish_model.uniform.transform.translation = f.position;
+      draw(fish_model, scene.camera, scene.light_data, pass);
+    }
+
     terrain.draw(scene.camera, scene.light_data, pass);
 
   }
