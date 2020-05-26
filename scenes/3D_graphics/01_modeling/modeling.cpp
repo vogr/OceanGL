@@ -16,12 +16,14 @@ using namespace vcl;
 void scene_model::setup_data(std::map<std::string,GLuint>& shaders, scene_structure& scene, gui_structure& gui) {
 
   /** Setup user cursor */
-  // Hide cursor
+  // Press F6 to hide the cursor
+  /*
   glfwSetInputMode(gui.window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
   // Use raw cursor input
   if (glfwRawMouseMotionSupported()) {
     glfwSetInputMode(gui.window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
   }
+  */
 
   /** Setup user camera */
   scene.camera.scale = 0.0f;
@@ -53,10 +55,12 @@ void scene_model::setup_data(std::map<std::string,GLuint>& shaders, scene_struct
   /** Prepare drawable elements : meshes and textures */
 
   // Prepare chunk loader
+  int const RENDER_RADIUS = 6;
   terrain = ChunkLoader{
     create_texture_gpu( image_load_png("scenes/3D_graphics/01_modeling/assets/floor.png"), GL_REPEAT, GL_REPEAT),
-    7
+    RENDER_RADIUS
   };
+  terrain.n_billboards_per_chunk = 4;
 
   // Prepare shark
   shark_model = mesh_drawable{mesh_load_file_obj("scenes/3D_graphics/01_modeling/assets/shark/Shark.obj")};
@@ -65,8 +69,7 @@ void scene_model::setup_data(std::map<std::string,GLuint>& shaders, scene_struct
   shark.trajectory.init(make_shark_trajectory_keyframes());
   shark.model.uniform.shading.specular = 0.1;
 
-  // Prepare bird
-  bird.build(shaders, make_shark_trajectory_keyframes());
+
 
 }
 
@@ -81,7 +84,10 @@ void scene_model::frame_draw(std::map<std::string,GLuint>& shaders, scene_struct
    * Animation loop
    */
   float dt = main_timer.update();
-  camera_physics.move_and_slide(scene.camera, get_move_dir_from_user_input(gui.window), dt);
+
+  //TODO: add back move_and_slide to enable collisions with ground
+  //camera_physics.move_and_slide(scene.camera, get_move_dir_from_user_input(gui.window), dt);
+  camera_physics.move_in_dir(scene.camera, get_move_dir_from_user_input(gui.window), dt);
   {
     // Load the chunks around the player
     auto p = scene.camera.camera_position();
@@ -142,9 +148,10 @@ void scene_model::frame_draw(std::map<std::string,GLuint>& shaders, scene_struct
     // set correct viewport before drawing.
     glViewport(0, 0, width, height);
 
-    terrain.draw(scene.camera, scene.light_data, pass);
     shark.draw(scene.camera, scene.light_data, pass);
-    bird.draw(scene.camera, scene.light_data, pass);
+    //bird.draw(scene.camera, scene.light_data, pass);
+    terrain.draw(scene.camera, scene.light_data, pass);
+
   }
 
 

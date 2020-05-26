@@ -95,22 +95,3 @@ void TreeElement::draw(const camera_scene& camera, const light_animation_data & 
   tree->update_local_to_global_coordinates();
   vcl::draw(*tree, camera, light_data, draw_type);
 }
-
-MushroomMesh::MushroomMesh(GLuint texture)
-: foot{create_cylinder(0.025f, 0.07f)},
-  head{create_cone(0.045f, 0.025f, 0.05f)}
-{
-  foot.uniform.color = vec3{214.f, 208.f, 208.f} / 255.f;
-  foot.texture_id = texture;
-
-  head.uniform.color = vec3{176.f, 52.f, 40.f} / 255.f;
-  head.texture_id = texture;
-}
-
-void MushroomElement::draw(const camera_scene& camera, GLuint shader) {
-  mushroom.foot.uniform.transform.translation = transform.translation + vec3{0.f, 0.f, -0.015f};
-  mushroom.head.uniform.transform.translation = transform.translation;
-  vcl::draw(mushroom.foot, camera, shader);
-  vcl::draw(mushroom.head, camera, shader);
-}
-

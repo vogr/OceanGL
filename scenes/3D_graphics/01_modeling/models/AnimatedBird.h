@@ -15,7 +15,7 @@ public:
   Trajectory trajectory;
 
   AnimatedBird() = default;
-  //AnimatedBird* clone() override {return new AnimatedBird(*this);}
+  AnimatedBird* clone() override {return new AnimatedBird(*this);}
 
   void build(std::map<std::string,GLuint>& shaders, vcl::buffer<keyframe> trajectory_keyframes);
   void draw(const vcl::camera_scene& camera, const vcl::light_animation_data & light_data, vcl::DrawType draw_type);

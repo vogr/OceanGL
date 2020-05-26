@@ -19,24 +19,25 @@ public:
 
 class CrossBillboardMesh {
 public:
-    mesh_drawable billboard;
+    mesh_drawable billboard[4];
     explicit CrossBillboardMesh(GLuint texture_id);
+    void set_texture_id(GLuint tex_id);
 };
 
 class FlatBillboard : public WorldElement {
 private:
     FlatBillboardMesh model;
 public:
-    //FlatBillboard* clone() override {return new FlatBillboard(*this);}
+    FlatBillboard* clone() override {return new FlatBillboard(*this);}
     explicit FlatBillboard(FlatBillboardMesh m, affine_transform t, double radius) : WorldElement{t, radius}, model{std::move(m)} {};
-    void draw(const camera_scene& camera, GLuint shader) override;
+    void draw(const vcl::camera_scene& camera, const light_animation_data & light_data, DrawType draw_type) override;
 };
 
 class CrossBillboard : public WorldElement {
 private:
     CrossBillboardMesh model;
 public:
-    //CrossBillboard* clone() override {return new CrossBillboard(*this);}
+    CrossBillboard* clone() override {return new CrossBillboard(*this);}
     explicit CrossBillboard(CrossBillboardMesh m, affine_transform t, double radius) : WorldElement{t, radius}, model{std::move(m)} {};
-    void draw(const camera_scene& camera, GLuint shader) override;
+    void draw(const vcl::camera_scene& camera, const light_animation_data & light_data, DrawType draw_type) override;
 };

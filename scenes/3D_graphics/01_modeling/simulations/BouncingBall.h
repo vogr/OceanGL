@@ -10,6 +10,8 @@
 
 class BouncingBall : public WorldElement {
 public:
+
+  BouncingBall* clone() override {return new BouncingBall(*this);};
   vcl::vec3 velocity;
   std::shared_ptr<vcl::mesh_drawable> model;
   double mass {1.0};
@@ -25,7 +27,7 @@ public:
   void move_and_collide(float dt);
   void update(float dt);
 
-  void draw(const vcl::camera_scene& camera, GLuint shader) override;
+  void draw(const vcl::camera_scene& camera, const vcl::light_animation_data & light_data, vcl::DrawType draw_type) override;
 };
 
 

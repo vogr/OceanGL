@@ -43,7 +43,7 @@ void BouncingBall::update(float dt) {
   }
 }
 
-void BouncingBall::draw(const vcl::camera_scene& camera, GLuint shader) {
+void BouncingBall::draw(const vcl::camera_scene& camera, const vcl::light_animation_data & light_data, vcl::DrawType draw_type) {
   model->uniform.transform = transform;
-  vcl::draw(*model, camera, shader);
+  vcl::draw(*model, camera, light_data, draw_type);
 }

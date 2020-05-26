@@ -7,8 +7,9 @@
 #include "models/AnimatedFish.h"
 #include "models/models.h"
 #include "models/billboards.h"
-#include "models/skybox.h"
-#include "terrain/terrain.h"
+
+#include "terrain/ChunkLoader.hpp"
+
 
 #include "trajectories/Trajectory.h"
 
