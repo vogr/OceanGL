@@ -14,17 +14,6 @@ using namespace vcl;
 /** This function is called before the beginning of the animation loop
     It is used to initialize all part-specific data */
 void scene_model::setup_data(std::map<std::string,GLuint>& shaders, scene_structure& scene, gui_structure& gui) {
-
-  /** Setup user cursor */
-  // Press F6 to hide the cursor
-  /*
-  glfwSetInputMode(gui.window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-  // Use raw cursor input
-  if (glfwRawMouseMotionSupported()) {
-    glfwSetInputMode(gui.window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
-  }
-  */
-
   /** Setup user camera */
   scene.camera.scale = 0.0f;
   // Initial position :

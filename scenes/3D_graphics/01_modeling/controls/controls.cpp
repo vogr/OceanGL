@@ -128,9 +128,9 @@ void scene_model::keyboard_input(scene_structure& scene, GLFWwindow* window, int
       // Hide cursor
       glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
       // Use raw cursor input
-      if (glfwRawMouseMotionSupported()) {
-        glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
-      }
+      //if (glfwRawMouseMotionSupported()) {
+      //  glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+      //}
     }
 
   }
