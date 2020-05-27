@@ -23,13 +23,14 @@ Chunk::Chunk(int i, int j, GLuint texture_id, std::vector<std::unique_ptr<WorldE
   {
     for(size_t kv=0; kv<N; ++kv)
     {
-      // Compute local parametric coordinates (u,v) \in [0,1]
+      // Compute local parametric coordinates (u,v) \in [i,i+1] x [j, j+1]
       const float u = i + ku/(N-1.0f);
       const float v = j + kv/(N-1.0f);
 
-      // Compute texture coordinates : use repetition (values > 1.)
-      float const tv = (N-1) * u * 0.2f;
-      float const tu = (N-1) * v * 0.2f;
+      // Compute texture coordinates : use repetition (multiply by factor > 1).
+      // Probably best to keep an integer factor.
+      float const tv = u * 5;
+      float const tu = v * 5;
 
 
       // Compute coordinates
@@ -37,8 +38,6 @@ Chunk::Chunk(int i, int j, GLuint texture_id, std::vector<std::unique_ptr<WorldE
       terrain_cpu.texture_uv[kv+N*ku] = {tu, tv};
     }
   }
-  terrain_cpu.texture_uv[0] = {0., 0.};
-
 
   // Generate triangle organization
   //  Parametric surface with uniform grid sampling: generate 2 triangles for each grid cell

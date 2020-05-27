@@ -22,9 +22,6 @@ void scene_model::setup_data(std::map<std::string,GLuint>& shaders, scene_struct
 
   /** Setup light source */
   scene.light_data = light_animation_data{shaders["mesh_depth_pass"], shaders["mesh_draw_pass"]};
-  scene.light_data.fog_color = {0.4,0.4,0.4};
-  scene.light_data.fog_intensity_linear = 0.3;
-  scene.light_data.fog_intensity_exp = 0.005;
 
   // Load the 32 sprites of the the caustics animation
   std::string const root = "scenes/3D_graphics/01_modeling/assets/caustics/caust";
@@ -106,6 +103,10 @@ void scene_model::frame_draw(std::map<std::string,GLuint>& shaders, scene_struct
   {
     // Load the chunks around the player
     auto p = scene.camera.camera_position();
+
+    std::cout << scene.camera.camera_position() << "\n";
+    std::cout << terrain_xy_to_uv({p.x, p.y}) << "\n";
+
     terrain.update_center(p);
     // Move light source (because caustics texture are only visible in a small radius around the light source)
     scene.light_data.light_camera.translation = {-p.x, -p.y, -150};

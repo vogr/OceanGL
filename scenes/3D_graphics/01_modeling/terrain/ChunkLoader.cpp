@@ -5,34 +5,41 @@
 ChunkLoader::ChunkLoader(GLuint _texture_id, int _radius_to_load)
 : texture_id{_texture_id}, radius_to_load{_radius_to_load}
 {
-  billboards_models.reserve(2 * 9);
-  // Load the 32 sprites of the the caustics animation
+  int const N_PLANTS = 24;
+  billboards_models.reserve(N_PLANTS);
   std::string const root = "scenes/3D_graphics/01_modeling/assets/ocean_plants/ocean_plant";
   std::string const ext = ".png";
 
-  // All billboards will share the same meshes definition int the VBO,
+  // All billboards will share the same meshes definition in the VBO,
   // only the texture ID will change.
   CrossBillboardMesh cross{0};
-  FlatBillboardMesh flat{0};
+  //FlatBillboardMesh flat{0};
 
-  std::vector<float> t_scale {15, 12, 20, 18, 10, 12, 30, 9};
-  std::vector<float> t_radius {2, 1, 2, 2,   0.5, 0.5, 2, 1};
+  std::vector<float> t_scale {16, 20, 23, 21, 21, 15, 12, 15, 20, 23, 19, 27, 29, 14, 25, 23, 20, 28, 17, 13, 28, 25, 24};
+  std::vector<float> z_correction(N_PLANTS, -2.);
+  z_correction[3]  = -7;
+  z_correction[12] = -4;
+  z_correction[15] = -4;
+  z_correction[16] = -4;
+  z_correction[17] = -8;
+  z_correction[20] = -2.5;
 
-  for (int i = 0; i < 8; i++) {
-    char id[2];
-    sprintf(id, "%01d", i);
+
+  for (int i = 0; i < N_PLANTS; i++) {
+    char id[3];
+    sprintf(id, "%02d", i);
      auto tex_id = create_texture_gpu(
             image_load_png(root + id + ext),
             GL_CLAMP_TO_BORDER, GL_CLAMP_TO_BORDER
     );
      float scale = t_scale[i];
-     float radius = t_radius[i];
+     float radius = 1.;
     {
       // The initial transform should place the object at coordinates (0,0),
       // it will then be translated to its final position in the chunks
       // by a simple translation
       cross.set_texture_id(tex_id);
-      auto w = std::make_unique<CrossBillboard>(cross, affine_transform{{0,0,-2}, {}, scale}, radius);
+      auto w = std::make_unique<CrossBillboard>(cross, affine_transform{{0,0,z_correction[i]}, {}, scale}, radius);
       billboards_models.push_back(std::move(w));
     }
     /*
