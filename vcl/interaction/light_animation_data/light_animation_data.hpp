@@ -14,6 +14,9 @@ namespace vcl {
         light_animation_data(GLuint shader0, GLuint shader1);
         mat4 orthographic_projection_matrix() const;
 
+        vcl::vec3 fog_color {0.282, 0.239, 0.545};
+        float fog_intensity_linear = 0.3;
+        float fog_intensity_exp = 0.01;
 
         // /!\ We use a camera but
         camera_scene light_camera;

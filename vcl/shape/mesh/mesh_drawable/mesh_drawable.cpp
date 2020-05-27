@@ -158,6 +158,10 @@ void draw_pass1(const mesh_drawable& drawable, const camera_scene& user_camera, 
     uniform(light_data.shader_pass1, "light_position", light_data.light_camera.camera_position());        opengl_debug();
     uniform(light_data.shader_pass1, "light_view_size", light_data.view_size); opengl_debug();
 
+    // Fog parameters
+    uniform(light_data.shader_pass1, "fog_color", light_data.fog_color); opengl_debug();
+    uniform(light_data.shader_pass1, "fog_intensity_exp", light_data.fog_intensity_exp); opengl_debug();
+    uniform(light_data.shader_pass1, "fog_intensity_linear", light_data.fog_intensity_linear); opengl_debug();
 
 
     // Bind object texture only if id != 0

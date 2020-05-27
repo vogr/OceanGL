@@ -22,6 +22,9 @@ void scene_model::setup_data(std::map<std::string,GLuint>& shaders, scene_struct
 
   /** Setup light source */
   scene.light_data = light_animation_data{shaders["mesh_depth_pass"], shaders["mesh_draw_pass"]};
+  scene.light_data.fog_color = {0.4,0.4,0.4};
+  scene.light_data.fog_intensity_linear = 0.3;
+  scene.light_data.fog_intensity_exp = 0.005;
 
   // Load the 32 sprites of the the caustics animation
   std::string const root = "scenes/3D_graphics/01_modeling/assets/caustics/caust";
@@ -189,11 +192,9 @@ void scene_model::frame_draw(std::map<std::string,GLuint>& shaders, scene_struct
 
 
 
-void scene_model::set_gui()
-{
-    ImGui::Checkbox("Wireframe", &gui_scene.wireframe);
+void scene_model::set_gui() {
+  ImGui::Checkbox("Wireframe", &gui_scene.wireframe);
 }
-
 
 
 #endif

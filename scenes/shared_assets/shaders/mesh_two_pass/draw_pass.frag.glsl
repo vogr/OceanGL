@@ -21,6 +21,10 @@ uniform vec3 camera_position;
 uniform vec3 light_position;
 uniform float light_view_size;
 
+uniform vec3 fog_color;
+uniform float fog_intensity_linear;
+uniform float fog_intensity_exp;
+
 uniform vec3 color     = vec3(1.0, 1.0, 1.0);
 uniform float color_alpha = 1.0;
 uniform float ambiant  = 0.1;
@@ -80,9 +84,9 @@ void main()
 
     // Add fog
     float dist_from_view = length(camera_position - fragment.position.xyz);
-    float fog = 1 - 0.7 * exp(-0.01 * dist_from_view);
+    float fog = 1 - (1 - fog_intensity_linear) * exp(-fog_intensity_exp * dist_from_view);
 
-    c = (1 - fog) * c + fog * vec3(0.282, 0.239, 0.545);
+    c = (1 - fog) * c + fog * fog_color;
 
 
     FragColor = vec4(c, color_texture.a*fragment.color.a*color_alpha);

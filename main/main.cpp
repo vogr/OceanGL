@@ -81,6 +81,7 @@ int main()
         opengl_debug();
 
         // Clear all color and zbuffer information before drawing on the screen
+        glClearColor(scene.light_data.fog_color.x, scene.light_data.fog_color.y, scene.light_data.fog_color.z, 1.0f);
         clear_screen();opengl_debug();
         // Set a white image texture by default
         glBindTexture(GL_TEXTURE_2D,scene.texture_white);

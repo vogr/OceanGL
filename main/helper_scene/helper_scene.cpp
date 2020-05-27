@@ -78,7 +78,6 @@ void setup_scene(scene_structure &scene, gui_structure& gui, const std::map<std:
 
 void clear_screen()
 {
-    glClearColor(0.282, 0.239, 0.545, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
     glClear(GL_DEPTH_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST);
