@@ -23,7 +23,7 @@ ChunkLoader::ChunkLoader(GLuint _texture_id, int _radius_to_load)
     sprintf(id, "%01d", i);
      auto tex_id = create_texture_gpu(
             image_load_png(root + id + ext),
-            GL_REPEAT, GL_REPEAT
+            GL_CLAMP_TO_BORDER, GL_CLAMP_TO_BORDER
     );
      float scale = t_scale[i];
      float radius = t_radius[i];
