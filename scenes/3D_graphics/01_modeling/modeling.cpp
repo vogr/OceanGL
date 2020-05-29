@@ -124,12 +124,15 @@ void scene_model::frame_draw(std::map<std::string,GLuint>& shaders, scene_struct
   shark.update();
   chased_fish.update();
 
+
+
   // Move boids
   for (int i = 0 ; i < 5 ; i++) {
     for(Boid& f : all_boids){
       f.update(all_boids, dt / 3);
     }
   }
+
 
 
   /**
@@ -177,7 +180,7 @@ void scene_model::frame_draw(std::map<std::string,GLuint>& shaders, scene_struct
     chased_fish.draw(scene.camera, scene.light_data, pass);
 
     for (auto & f : all_boids) {
-      fish_model.uniform.transform.rotation = mat3{{1,0,0}, {0,1,0}, f.direction};;
+      fish_model.uniform.transform.rotation = mat3{{1,0,0}, {0,0,1}, f.direction};;
       fish_model.uniform.transform.translation = f.position;
       draw(fish_model, scene.camera, scene.light_data, pass);
     }

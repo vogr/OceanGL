@@ -15,7 +15,7 @@ public:
     vcl::vec3 center_nearby_flock;
     vcl::vec3 avgFlockHeading;
     vcl::vec3 avgAvoidanceHeading;
-    vcl::vec3 avoidSharkHeading;
+    //vcl::vec3 avoidSharkHeading;
     vcl::vec3 target;
     float v;
     float radius_of_vision;
@@ -32,7 +32,7 @@ public:
 
     bool inCube(vcl::vec3& vector);
 
-    bool free_direction(std::vector<Boid>& all_fish, vcl::vec3 vector);
+    bool free_direction(vcl::vec3 vector);
 
     void steer_away_from(vcl::vec3& other_position); //function to be used on each boid
     void get_away_from_shark(vcl::vec3& shark_postion);

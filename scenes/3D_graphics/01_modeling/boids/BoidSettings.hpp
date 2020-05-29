@@ -20,6 +20,6 @@ class BoidSettings{
         //LayerMask obstacleMask;
         float boundsRadius = .27f;
         float avoidCollisionWeight = 10;
-        float avoidsharkWeight = 5;
+        float avoidsharkWeight = 9;
         float collisionAvoidDst = 5;
 };

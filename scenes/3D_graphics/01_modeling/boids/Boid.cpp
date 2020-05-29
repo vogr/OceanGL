@@ -7,36 +7,16 @@ bool Boid::inCube(vcl::vec3& vector){
     vcl::vec2 xy = {vector[0], vector[1]};
     vcl::vec2 uv = terrain_xy_to_uv(xy);
     float z = evaluate_terrain_z(uv.x, uv.y);
+
     return
        (std::abs(vector[0]) < L) &&
        (std::abs(vector[1]) < L) &&
-       (vector[2] > z+1) && (vector[2] < 30);
+       (vector[2] > z+5) && (vector[2] < 30);
 }
 
-bool Boid::free_direction(std::vector<Boid>& all_fish, vcl::vec3 vector){
-    bool direction_acceptable = inCube(vector);
-
-    if(direction_acceptable){ //look out for other objects only if in cube
-        //look out for other fish
-        for(auto & fish : all_fish){
-            vcl::vec3 pointer_to_fish = fish.position - this->position;
-            float distance = vcl::norm(pointer_to_fish);
-
-            if(distance == 0) {
-              //
-            }
-            else if(distance < this->radius_of_vision){
-                float cos_angle = vcl::dot(this->direction, pointer_to_fish) / (vcl::norm(this->direction)*vcl::norm(pointer_to_fish));
-                float angle = std::acos(cos_angle);
-                if(angle < this->angle_avoidance_fish){
-                    return false;
-                }
-            }
-        }
-        //look out for corals
-    }
-
-    return true;
+bool Boid::free_direction(vcl::vec3 vector){
+    return inCube(vector);
+    //look out for Corals
 }
 
 
@@ -73,9 +53,9 @@ void Boid::steer_away_from(vcl::vec3& other_position){
 }
 
 void Boid::get_away_from_shark(vec3 &shark_postion){
+    //this->avoidSharkHeading = {0,0,0};
     vcl::vec3 pointer_to_shark = shark_postion - this->position;
-    float distance = vcl::norm(pointer_to_shark);
-    this->avoidSharkHeading = -pointer_to_shark / (distance*distance);
+    this->avgAvoidanceHeading -= vcl::normalize(pointer_to_shark)*5;
 }
 
 void Boid::align(vcl::vec3& direction_of_flock){
@@ -113,7 +93,7 @@ vcl::vec3 Boid::ObstacleRays(std::vector<Boid>& all_fish){
         //transform direction in global parameters
         vcl::vec3 dir = rotation_between_vector_mat3({0,0,1}, direction)*rayDirections[i];
 
-        if(free_direction(all_fish,position + (settings.collisionAvoidDst+settings.boundsRadius)*normalize(dir))){
+        if(free_direction(position + (settings.collisionAvoidDst+settings.boundsRadius)*normalize(dir))){
             return dir;
         }
     }
@@ -122,7 +102,7 @@ vcl::vec3 Boid::ObstacleRays(std::vector<Boid>& all_fish){
 }
 
 bool Boid::IsHeadingForCollision(std::vector<Boid>& all_fish){
-    if(free_direction(all_fish, position + (settings.collisionAvoidDst-settings.boundsRadius)*normalize(direction)))
+    if(free_direction(position + (settings.collisionAvoidDst-settings.boundsRadius)*normalize(direction)))
        return false;
     return true;
 }
@@ -136,6 +116,16 @@ void Boid::update(std::vector<Boid>& all_fish, float dt){
     for(auto & fish : all_fish){
         vcl::vec3 pointer_to_fish = fish.position - this->position;
         float distance = vcl::norm(pointer_to_fish);
+        if(distance == 0) {
+          //
+        }
+        else if(distance < this->radius_of_vision){
+            float cos_angle = vcl::dot(this->direction, pointer_to_fish) / (vcl::norm(this->direction)*vcl::norm(pointer_to_fish));
+            float angle = std::acos(cos_angle);
+            if(angle < this->angle_avoidance_fish){
+                steer_away_from(fish.position);
+            }
+        }
 
         if(distance < this->radius_flock){
             numPerceivedFlockmates++;
@@ -167,12 +157,11 @@ void Boid::update(std::vector<Boid>& all_fish, float dt){
         auto alignmentForce = steer_towards(avgFlockHeading) * settings.alignWeight;
         auto cohesionForce = steer_towards(offsetToFlockmatesCentre) * settings.cohesionWeight;
         auto seperationForce = steer_towards(avgAvoidanceHeading) * settings.seperateWeight;
-        auto sharkForse = steer_towards(avoidSharkHeading) * settings.avoidsharkWeight;
+
 
         acceleration += alignmentForce;
         acceleration += cohesionForce;
         acceleration += seperationForce;
-        acceleration += sharkForse;
      }
 
     if (IsHeadingForCollision(all_fish)) {
