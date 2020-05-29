@@ -1,12 +1,42 @@
 #include "Boid.hpp"
+#include "../terrain/terrain.h"
 #include <iostream>
 
-bool inCube(vcl::vec3 vector){
+bool Boid::inCube(vcl::vec3& vector){
     float L = 40.f;
+    vcl::vec2 xy = {vector[0], vector[1]};
+    vcl::vec2 uv = terrain_xy_to_uv(xy);
+    float z = evaluate_terrain_z(uv.x, uv.y);
     return
        (std::abs(vector[0]) < L) &&
        (std::abs(vector[1]) < L) &&
-       (vector[2] > 5) && (vector[2] < 30);
+       (vector[2] > z+1) && (vector[2] < 30);
+}
+
+bool Boid::free_direction(std::vector<Boid>& all_fish, vcl::vec3 vector){
+    bool direction_acceptable = inCube(vector);
+
+    if(direction_acceptable){ //look out for other objects only if in cube
+        //look out for other fish
+        for(auto & fish : all_fish){
+            vcl::vec3 pointer_to_fish = fish.position - this->position;
+            float distance = vcl::norm(pointer_to_fish);
+
+            if(distance == 0) {
+              //
+            }
+            else if(distance < this->radius_of_vision){
+                float cos_angle = vcl::dot(this->direction, pointer_to_fish) / (vcl::norm(this->direction)*vcl::norm(pointer_to_fish));
+                float angle = std::acos(cos_angle);
+                if(angle < this->angle_avoidance_fish){
+                    return false;
+                }
+            }
+        }
+        //look out for corals
+    }
+
+    return true;
 }
 
 
@@ -32,18 +62,20 @@ Boid::Boid(vcl::vec3 position_, vcl::vec3 direction_, vcl::vec3 center_nearby_fl
 }
 
 
-void Boid::steer_away_from(Boid& other){
-    vcl::vec3 pointer_to_other = other.position - this->position;
+void Boid::steer_away_from(vcl::vec3& other_position){
+    vcl::vec3 pointer_to_other = other_position - this->position;
     /* d : direction
      * p : pointer to other
      * q : symetric to p by d ; q = 2d-p
      * nd: new direction ; nd = (d+q)/2 = (3d-p)/2
      */
-    /*
-    this->direction = (3*this->direction - pointer_to_other)/2.0;
-    this->direction = vcl::normalize(this->direction);
-    */
     this->avgAvoidanceHeading+=vcl::normalize(pointer_to_other);
+}
+
+void Boid::get_away_from_shark(vec3 &shark_postion){
+    vcl::vec3 pointer_to_shark = shark_postion - this->position;
+    float distance = vcl::norm(pointer_to_shark);
+    this->avoidSharkHeading = -pointer_to_shark / (distance*distance);
 }
 
 void Boid::align(vcl::vec3& direction_of_flock){
@@ -62,38 +94,7 @@ void Boid::face(){
     this->direction = vcl::normalize(this->direction);
 }
 
-/*
-void Boid::avoid_cube(){
-
-
-    float dist = distance_cube();
-    if(dist < 4){
-        this->direction = -this->direction;
-        std::cout<<"avoiding cube"<<std::endl;
-    }
-
-
-    vcl::vec3 zero = {0,0,0};
-    float dist = distance_cube();
-    float avoiding_acceleration= 0.7;
-    std::cout<<"dist to cube = "<< dist << std::endl;
-    if(dist < 4){
-        std::cout<<"entered because dist to cube = "<< dist << std::endl;
-        if(this->avoid_cube_direction.equal(zero)){
-            vcl::vec3 orthogonal_dir = vcl::normalize(vcl::vec3(this->direction[1], -this->direction[0], -this->direction[2]));
-            this->avoid_cube_direction = avoiding_acceleration * orthogonal_dir;
-        }
-        this->direction += this->avoid_cube_direction;
-        vcl::vec3 direction_avoid_cube= vcl::normalize(this->avoid_cube_direction);
-        if(vcl::normalize(this->direction).equal(direction_avoid_cube))  this->avoid_cube_direction=zero;
-    }
-    else if(!this->avoid_cube_direction.equal(zero))
-        this->avoid_cube_direction = zero;
-
-}
-*/
-
-vcl::vec3 Boid::steer_towards(vcl::vec3 vector){
+vcl::vec3 Boid::steer_towards(vcl::vec3& vector){
 
     vcl::vec3 v = vcl::normalize(vector) * this->settings.maxSpeed - this->velocity;
 
@@ -104,22 +105,15 @@ vcl::vec3 Boid::steer_towards(vcl::vec3 vector){
 }
 
 
-vcl::vec3 Boid::ObstacleRays(){
+vcl::vec3 Boid::ObstacleRays(std::vector<Boid>& all_fish){
     //only works in a cube
     auto & rayDirections = boidhelp.directions;
 
     for (int i = 0; i < boidhelp.numViewDirections; i++) {
         //transform direction in global parameters
         vcl::vec3 dir = rotation_between_vector_mat3({0,0,1}, direction)*rayDirections[i];
-        //std::cout << "new direction should be this? : " << dir << std::endl;
 
-        /*
-        auto objectif =  position + dir;    //ray
-        if (!Physics.SphereCast (ray, settings.boundsRadius, settings.collisionAvoidDst, settings.obstacleMask)) {
-            return dir;
-        }
-        */
-        if(inCube(position + (settings.collisionAvoidDst+settings.boundsRadius)*normalize(dir))){
+        if(free_direction(all_fish,position + (settings.collisionAvoidDst+settings.boundsRadius)*normalize(dir))){
             return dir;
         }
     }
@@ -127,8 +121,8 @@ vcl::vec3 Boid::ObstacleRays(){
     return direction;
 }
 
-bool Boid::IsHeadingForCollision(){
-    if(inCube(position + (settings.collisionAvoidDst-settings.boundsRadius)*normalize(direction)))
+bool Boid::IsHeadingForCollision(std::vector<Boid>& all_fish){
+    if(free_direction(all_fish, position + (settings.collisionAvoidDst-settings.boundsRadius)*normalize(direction)))
        return false;
     return true;
 }
@@ -142,17 +136,6 @@ void Boid::update(std::vector<Boid>& all_fish, float dt){
     for(auto & fish : all_fish){
         vcl::vec3 pointer_to_fish = fish.position - this->position;
         float distance = vcl::norm(pointer_to_fish);
-
-        if(distance == 0) {
-          //
-        }
-        else if(distance < this->radius_of_vision){
-            float cos_angle = vcl::dot(this->direction, pointer_to_fish) / (vcl::norm(this->direction)*vcl::norm(pointer_to_fish));
-            float angle = std::acos(cos_angle);
-            if(angle < this->angle_of_vision){
-                this->steer_away_from(fish);
-            }
-        }
 
         if(distance < this->radius_flock){
             numPerceivedFlockmates++;
@@ -184,14 +167,16 @@ void Boid::update(std::vector<Boid>& all_fish, float dt){
         auto alignmentForce = steer_towards(avgFlockHeading) * settings.alignWeight;
         auto cohesionForce = steer_towards(offsetToFlockmatesCentre) * settings.cohesionWeight;
         auto seperationForce = steer_towards(avgAvoidanceHeading) * settings.seperateWeight;
+        auto sharkForse = steer_towards(avoidSharkHeading) * settings.avoidsharkWeight;
 
         acceleration += alignmentForce;
         acceleration += cohesionForce;
         acceleration += seperationForce;
+        acceleration += sharkForse;
      }
 
-    if (IsHeadingForCollision()) {
-        vcl::vec3 collisionAvoidDir = ObstacleRays();
+    if (IsHeadingForCollision(all_fish)) {
+        vcl::vec3 collisionAvoidDir = ObstacleRays(all_fish);
         vcl::vec3 collisionAvoidForce = steer_towards(collisionAvoidDir) * settings.avoidCollisionWeight;
         acceleration += collisionAvoidForce;
     }
