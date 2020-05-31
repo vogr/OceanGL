@@ -3,6 +3,14 @@
 #include "terrain.h"
 #include "../models/billboards.h"
 
+/**
+ * Object representing a small part of the terrain : chunk (i,j)
+ * contains the data necessary to draw the terrain for uv coordinates
+ * in [i,i+1]x[j,j+1].
+ * Stores the mesh representing the ground (terrain) and the billboards
+ * on the ground.
+ */
+
 class Chunk {
 public:
     Chunk(int i, int j, GLuint texture_id, std::vector<std::reference_wrapper<CrossBillboard>> const &billboards_models, unsigned int n_billboard_per_chunk=15);

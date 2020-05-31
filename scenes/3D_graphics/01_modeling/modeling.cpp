@@ -57,10 +57,10 @@ void scene_model::setup_data(std::map<std::string,GLuint>& shaders, scene_struct
 
 
   // Boids
-  int const N_DIVISIONS = 40;
+  int const N_DIVISIONS = 60;
   boids_manager = AllBoidsManager(N_DIVISIONS);
   // Ideally we need : radius_of_vision < (space_grid_size / N_DIVISIONS)
-  boids_manager.space_grid_size = 410.f;
+  boids_manager.space_grid_size = 600.f;
   boids_manager.boids_settings.radius_of_vision = 10.f;
   boids_manager.fish_model = fish_model;
   size_t const N_BOIDS = 450;
