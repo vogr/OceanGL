@@ -91,22 +91,27 @@ void camera_control_glfw::update_mouse_move(camera_scene& camera, GLFWwindow* wi
 
     */
 
-  // Free camera : always rotation
-  // Get window size
-  int width, height;
-  glfwGetWindowSize(window, &width, &height);
-  const float w = static_cast<float>(width);
-  const float h = static_cast<float>(height);
-  // relative position on screen
-  const float ux0 = 2*x0/float(w)-1;
-  const float uy0 = 1-2*y0/float(h);
+  if (in_focus) {
 
-  const float ux1 = 2*x1/float(w)-1;
-  const float uy1 = 1-2*y1/float(h);
+    bool mouse_enabled = (glfwGetInputMode(window, GLFW_CURSOR) == GLFW_CURSOR_DISABLED);
+    if (mouse_enabled) {
+      // Free camera : always rotation
+      // Get window size
+      int width, height;
+      glfwGetWindowSize(window, &width, &height);
+      auto const w = static_cast<float>(width);
+      auto const h = static_cast<float>(height);
+      // relative position on screen
+      const float ux0 = 2 * x0 / w - 1;
+      const float uy0 = 1 - 2 * y0 / h;
 
-  // apply rotation
-  camera.apply_rotation(ux0, uy0, ux1, uy1);
+      const float ux1 = 2 * x1 / w - 1;
+      const float uy1 = 1 - 2 * y1 / h;
 
+      // apply rotation
+      camera.apply_rotation(ux0, uy0, ux1, uy1);
+    }
+  }
   // Update previous click position
   x0 = x1;
   y0 = y1;

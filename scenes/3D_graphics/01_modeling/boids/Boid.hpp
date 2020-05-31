@@ -3,40 +3,34 @@
 #include "vcl/vcl.hpp"
 #include "BoidSettings.hpp"
 #include "BoidHelper.hpp"
+#include "../models/WorldElement.h"
 
-class Boid
+
+class Boid : public WorldElement
 {
 public:
-    BoidSettings settings;
+    std::reference_wrapper<BoidSettings const> settings;
     //vcl::mesh_drawable point;
+    vcl::vec3 applied_forces;
     vcl::vec3 position;
-    vcl::vec3 velocity;
     vcl::vec3 direction;
-    vcl::vec3 center_nearby_flock;
-    vcl::vec3 avgFlockHeading;
-    vcl::vec3 avgAvoidanceHeading;
-    vcl::vec3 avoid_cube_direction;
-    vcl::vec3 target;
-    float v;
-    float radius_of_vision;
-    float angle_of_vision;
-    float numPerceivedFlockmates;
-    float radius_flock;
-    BoidHelper boidhelp;
+    vcl::vec3 velocity;
+
+    // Cooplete the frame
+    vcl::vec3 dir_up;
+    vcl::vec3 dir_right;
 
 
-    Boid();
-    Boid(vcl::vec3 position_, vcl::vec3 direction_ = {0,0,0}, vcl::vec3 center_nearby_flock_ = {0,0,0}, float v_=0.1,
-         float radius_of_vision_ = 0.8, float radius_flock_ = 3.0, float angle_of_vision_ = 3.0*M_PI/4.0);
+    Boid* clone() override {return new Boid{*this};};
+    vcl::vec3 getPosition() const override {return position; };
+    void setPosition(vcl::vec3 p) override {position = p; };
 
-    float distance_cube();
+    explicit Boid(BoidSettings const & _settings);
+    explicit Boid(BoidSettings const & _settings, vcl::vec3 position_, vcl::vec3 direction_ = {1,0,0});
 
-    void steer_away_from(Boid& other); //function to be used on each boid
-    void align(vcl::vec3& direction_of_flock);
-    void face();
-    void avoid_cube();
-    void update(std::vector<Boid>& all_fish, float dt);
-    vcl::vec3 steer_towards(vcl::vec3 vector);
-    vcl::vec3 ObstacleRays();
-    bool IsHeadingForCollision();
+    vcl::vec3 steer_towards(vcl::vec3 dir, float dt);
+    void integrate_forces(float dt);
+
+    vcl::vec3 obstacle_avoidance_dir(WorldElement const & obstacle);
+    vcl::vec3 avoid_all_obstacles_weighted_dir(std::vector<std::reference_wrapper<WorldElement>> const & obstacles_to_consider);
 };

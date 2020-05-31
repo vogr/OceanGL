@@ -1,211 +1,139 @@
 #include "Boid.hpp"
+
 #include <iostream>
 
-bool inCube(vcl::vec3 vector){
-    float L = 40.f;
-    return
-       (std::abs(vector[0]) < L) &&
-       (std::abs(vector[1]) < L) &&
-       (vector[2] > 5) && (vector[2] < 30);
-}
 
+#include "../terrain/terrain.h"
 
 /** This part is for defining the boids' behaviour depending on the list of nearby boids*/
-Boid::Boid(){
-    //point = mesh_primitive_sphere(0.2);
-    position = {0.0,0.0,0.0};
-    center_nearby_flock = {0.0,0.0,0.0};
-    direction = {1.0,0.0,0.0};
+Boid::Boid(BoidSettings const & _settings)
+: WorldElement{1.},
+  settings{_settings},
+  position{0.0,0.0,0.0},
+  direction{1.0,0.0,0.0}
+{
+  dir_right = normalize(cross(direction, {0,0,1}));
+  dir_up = cross(dir_right, direction);
 }
 
-Boid::Boid(vcl::vec3 position_, vcl::vec3 direction_, vcl::vec3 center_nearby_flock_,  float v_, float radius_of_vision_, float radius_flock_,
-           float angle_of_vision_){
-    position = position_;
-   // point = mesh_primitive_sphere(0.2,position);
-    center_nearby_flock = center_nearby_flock_;
-    direction = vcl::normalize(direction_);
-    velocity=v_*direction;
-    radius_of_vision = radius_of_vision_;
-    radius_flock = radius_flock_;
-    angle_of_vision = angle_of_vision_;
-    target = (position + direction);
+Boid::Boid(BoidSettings const & _settings, vcl::vec3 position_, vcl::vec3 direction_)
+: WorldElement{1.f},
+  settings{_settings},
+  position{position_},
+  direction{direction_}
+{
+  velocity = settings.get().maxSpeed * direction;
+  dir_right = normalize(cross(direction, {0,0,1}));
+  dir_up = cross(dir_right, direction);
 }
 
+vcl::vec3 Boid::steer_towards(vcl::vec3 target_dir, float dt){
+    // target dir should be normalized !
+    vcl::vec3 desired_velocity = target_dir * settings.get().maxSpeed;
 
-void Boid::steer_away_from(Boid& other){
-    vcl::vec3 pointer_to_other = other.position - this->position;
-    /* d : direction
-     * p : pointer to other
-     * q : symetric to p by d ; q = 2d-p
-     * nd: new direction ; nd = (d+q)/2 = (3d-p)/2
-     */
-    /*
-    this->direction = (3*this->direction - pointer_to_other)/2.0;
-    this->direction = vcl::normalize(this->direction);
-    */
-    this->avgAvoidanceHeading+=vcl::normalize(pointer_to_other);
-}
+    // F : force that would take boid exactly to desired_velocity after dt
+    vcl::vec3 F =  (desired_velocity - velocity) / dt;
 
-void Boid::align(vcl::vec3& direction_of_flock){
-    this->direction =  (4.0*this->direction + direction_of_flock);
-    this->direction = vcl::normalize(this->direction);
-}
-
-void Boid::face(){
-    vcl::vec3 pointer_to_center = this->center_nearby_flock - this->position;
-    /* d : direction
-     * p : pointer to center
-     * q : symetric to p by d ; q = 2d-p
-     * nd: new direction ; nd = (d+q)/2 = (3d-p)/2
-     */
-    this->direction = (3*this->direction - pointer_to_center)/2.0;
-    this->direction = vcl::normalize(this->direction);
-}
-
-/*
-void Boid::avoid_cube(){
-
-
-    float dist = distance_cube();
-    if(dist < 4){
-        this->direction = -this->direction;
-        std::cout<<"avoiding cube"<<std::endl;
+    // Scale back F to maxSteerForce if it is too high
+    float const n = norm(F);
+    if( n > settings.get().maxSteerForce) {
+      return settings.get().maxSteerForce * (F / n);
     }
-
-
-    vcl::vec3 zero = {0,0,0};
-    float dist = distance_cube();
-    float avoiding_acceleration= 0.7;
-    std::cout<<"dist to cube = "<< dist << std::endl;
-    if(dist < 4){
-        std::cout<<"entered because dist to cube = "<< dist << std::endl;
-        if(this->avoid_cube_direction.equal(zero)){
-            vcl::vec3 orthogonal_dir = vcl::normalize(vcl::vec3(this->direction[1], -this->direction[0], -this->direction[2]));
-            this->avoid_cube_direction = avoiding_acceleration * orthogonal_dir;
-        }
-        this->direction += this->avoid_cube_direction;
-        vcl::vec3 direction_avoid_cube= vcl::normalize(this->avoid_cube_direction);
-        if(vcl::normalize(this->direction).equal(direction_avoid_cube))  this->avoid_cube_direction=zero;
+    else {
+      return F;
     }
-    else if(!this->avoid_cube_direction.equal(zero))
-        this->avoid_cube_direction = zero;
-
-}
-*/
-
-vcl::vec3 Boid::steer_towards(vcl::vec3 vector){
-
-    vcl::vec3 v = vcl::normalize(vector) * this->settings.maxSpeed - this->velocity;
-
-    double const n = norm(v);
-    if(n>settings.maxSteerForce)
-        v=settings.maxSteerForce * (v/n);
-    return v;
 }
 
+vcl::vec3 Boid::obstacle_avoidance_dir(WorldElement const & obstacle) {
+  vcl::vec3 boid_to_obstacle = obstacle.getPosition() - position;
 
-vcl::vec3 Boid::ObstacleRays(){
-    //only works in a cube
-    auto & rayDirections = boidhelp.directions;
+  // project obstacle center on boid direction :
+  // vector from center to its projection gives escape direction
+  float projection_value = vcl::dot(direction, boid_to_obstacle);
 
-    for (int i = 0; i < boidhelp.numViewDirections; i++) {
-        //transform direction in global parameters
-        vcl::vec3 dir = rotation_between_vector_mat3({0,0,1}, direction)*rayDirections[i];
-        //std::cout << "new direction should be this? : " << dir << std::endl;
+  // even if projection_value < 0 (obstacle is behind boid), try to avoid :
+  // = try to escape predators
 
-        /*
-        auto objectif =  position + dir;    //ray
-        if (!Physics.SphereCast (ray, settings.boundsRadius, settings.collisionAvoidDst, settings.obstacleMask)) {
-            return dir;
-        }
-        */
-        if(inCube(position + (settings.collisionAvoidDst+settings.boundsRadius)*normalize(dir))){
-            return dir;
-        }
-    }
 
-    return direction;
+  vcl::vec3 escape_direction;
+  if (projection_value < 0) {
+    escape_direction = - boid_to_obstacle;
+  }
+  else {
+    escape_direction =(projection_value * direction) - boid_to_obstacle;
+  }
+
+  if(norm(escape_direction) == 0.f) {
+    // Should be rare ! Boid is facing exactly towards the center of the obstacle. Any unit vector
+    // in the plane perpendicular to the direction is an escape direction.
+    escape_direction = {-direction.z, -direction.z, direction.x + direction.y};
+    // except if d.x = -d.y ... should be exceedingly rare
+  }
+  return vcl::normalize(escape_direction);
 }
 
-bool Boid::IsHeadingForCollision(){
-    if(inCube(position + (settings.collisionAvoidDst-settings.boundsRadius)*normalize(direction)))
-       return false;
-    return true;
-}
 
-void Boid::update(std::vector<Boid>& all_fish, float dt){
-    //see all fish and determine if in nearby flock
-    numPerceivedFlockmates = 0;
-    this->center_nearby_flock = {0.0,0.0,0.0};
-    this->avgFlockHeading = {0.0,0.0,0.0};
-    vcl::vec3 direction_of_flock = this->direction;
-    for(auto & fish : all_fish){
-        vcl::vec3 pointer_to_fish = fish.position - this->position;
-        float distance = vcl::norm(pointer_to_fish);
 
-        if(distance == 0) {
-          //
-        }
-        else if(distance < this->radius_of_vision){
-            float cos_angle = vcl::dot(this->direction, pointer_to_fish) / (vcl::norm(this->direction)*vcl::norm(pointer_to_fish));
-            float angle = std::acos(cos_angle);
-            if(angle < this->angle_of_vision){
-                this->steer_away_from(fish);
-            }
+vcl::vec3 Boid::avoid_all_obstacles_weighted_dir(std::vector<std::reference_wrapper<WorldElement>> const & obstacles_to_consider) {
+  vcl::vec3 accumulated_weighted_avoidance_dirs;
+
+  for (int T = -1 ; T <= 1 ; T++) {
+    for (int N = -1; N <= 1; N++) {
+      for(int B = -1 ; B <= 1; B++) {
+
+        // Don't raymarch zero vector !
+        if(T == 0 && N == 0 && B == 0) {
+          continue;
         }
 
-        if(distance < this->radius_flock){
-            numPerceivedFlockmates++;
-            avgFlockHeading += fish.direction;
-            this->center_nearby_flock += fish.position;
+        vcl::vec3 raymarching_dir = vcl::normalize(T * direction + N * dir_right + B * dir_up);
+        WorldElement* obstacle = settings.get().raymarcher.raymarch(position, raymarching_dir, obstacles_to_consider);
+        if (obstacle != nullptr) {
+          // Deal with obstacle : get avoidance_dir and weight
+          float d = obstacle->signed_distance(position);
+          float w = 1.;
+          if (d <= 0) {
+            // We're colliding !
+            w = 1.;
+          }
+          else {
+            //w = 1.f / d;
+            float r = settings.get().raymarcher.max_depth;
+            w = (r - d) / r;
+            w = w * w;
+          }
+          //float w = 1.f / ( 1 + obstacle->signed_distance(position))
+          accumulated_weighted_avoidance_dirs +=  w * obstacle_avoidance_dir(*obstacle);
         }
+      }
     }
-
-    if(numPerceivedFlockmates>0){
-        direction_of_flock = vcl::normalize(direction_of_flock);
-        this->center_nearby_flock = this->center_nearby_flock/numPerceivedFlockmates;
-    }
-    else
-        this->center_nearby_flock = this->position;
-
-
-
-    vcl::vec3 acceleration = {0,0,0};
-
-    vcl::vec3 offsetToTarget = target - position;
-    acceleration+= steer_towards(offsetToTarget);
-
-
-    if (numPerceivedFlockmates != 0) {
-        center_nearby_flock /= numPerceivedFlockmates;
-
-        vcl::vec3 offsetToFlockmatesCentre = (center_nearby_flock - position);
-
-        auto alignmentForce = steer_towards(avgFlockHeading) * settings.alignWeight;
-        auto cohesionForce = steer_towards(offsetToFlockmatesCentre) * settings.cohesionWeight;
-        auto seperationForce = steer_towards(avgAvoidanceHeading) * settings.seperateWeight;
-
-        acceleration += alignmentForce;
-        acceleration += cohesionForce;
-        acceleration += seperationForce;
-     }
-
-    if (IsHeadingForCollision()) {
-        vcl::vec3 collisionAvoidDir = ObstacleRays();
-        vcl::vec3 collisionAvoidForce = steer_towards(collisionAvoidDir) * settings.avoidCollisionWeight;
-        acceleration += collisionAvoidForce;
-    }
-
-
-    velocity += acceleration * dt;
-
-    float speed = vcl::norm(velocity);
-    vcl::vec3 dir = velocity / speed;
-
-    speed = vcl::clamp(speed, settings.minSpeed, settings.maxSpeed);
-    velocity = dir * speed;
-
-    this->position += velocity * dt;
-    this->direction = dir;
-    target = position + settings.maxSpeed*direction;
+  }
+  return accumulated_weighted_avoidance_dirs;
 }
+
+void Boid::integrate_forces(float dt) {
+  /* Symplectic Euler integration */
+
+  // Integrate forces
+  // These forces should previously have been updated by the AllBoidsManager
+  velocity += applied_forces / settings.get().boid_mass * dt;
+
+  float speed = vcl::norm(velocity);
+  direction = velocity / speed;
+
+  // Update normale and binormal directions
+  dir_right = normalize(cross(direction, {0,0,1}));
+  dir_up = cross(dir_right, direction);
+
+  float clamped_speed = vcl::clamp(speed, settings.get().minSpeed, settings.get().maxSpeed);
+
+  if (clamped_speed != speed) {
+    // clamp speed
+    velocity = clamped_speed * direction;
+  }
+
+  // Integgrate velocity
+  position += dt * velocity;
+}
+
+

@@ -60,38 +60,3 @@ mesh create_cone(float radius, float height, float z_offset) {
   }
   return cone;
 }
-
-
-mesh create_tree_foliage(float radius, float height, float z_offset)
-{
-  mesh m = create_cone(radius, height, 0);
-  m.push_back( create_cone(radius, height, z_offset) );
-  m.push_back( create_cone(radius, height, 2*z_offset) );
-  return m;
-}
-
-hierarchy_mesh_drawable TreeElement::create_tree_model(GLuint texture) {
-  hierarchy_mesh_drawable model;
-
-  mesh_drawable trunk {create_cylinder(0.1f, 1.f)};
-  trunk.uniform.color = vec3{82.f, 60.f, 58.f} / 255;
-  trunk.uniform.shading.specular = 0.05f;
-  trunk.texture_id = texture;
-  model.add(trunk, "trunk", "global_frame", {0.f,0.f,-0.25f});
-
-  mesh_drawable foliage {create_tree_foliage(0.3f, .5f, 0.125f)};
-  foliage.uniform.color = {0.f, 0.7f, 0.1f};
-  foliage.uniform.shading.specular = 0.1f;
-  foliage.texture_id = texture;
-
-  model.add(foliage, "foliage", "trunk", {0.f, 0.f, 0.75f});
-  return model;
-}
-
-
-
-void TreeElement::draw(const camera_scene& camera, const light_animation_data & light_data, DrawType draw_type) {
-  tree->elements[0].transform = transform;
-  tree->update_local_to_global_coordinates();
-  vcl::draw(*tree, camera, light_data, draw_type);
-}

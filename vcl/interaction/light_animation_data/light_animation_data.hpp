@@ -25,9 +25,9 @@ namespace vcl {
         GLuint shader_pass0{0};
         GLuint shader_pass1{0};
 
-        float view_size = 800.;
-        float z_near = 0.01f;
-        float z_far = 500.f;
+        float view_size = 500.;
+        float z_near = 0.1f;
+        float z_far = 400.f;
 
         // framebuffer object : will be used as rendering target in first
         // pass (off-line rendering). It will contain a simple texture `depth`

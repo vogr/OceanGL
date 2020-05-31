@@ -95,7 +95,7 @@ int main()
 
         // Render GUI and update window
         ImGui::End();
-        scene.camera_control.update = !(ImGui::IsAnyWindowFocused());
+        scene.camera_control.in_focus = !(ImGui::IsAnyWindowFocused());
         vcl::imgui_render_frame(gui.window);
 
         update_fps_title(gui.window, gui.window_title, fps_counter);

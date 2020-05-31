@@ -19,38 +19,19 @@ vec2 terrain_uv_to_xy(vec2 uv) {
 
 
 
-// Evaluate height of the terrain for any (u,v) \in [0,1]
+// Evaluate height of the terrain for any (u,v) \in R
 float evaluate_terrain_z(float u, float v)
 {
-  std::vector<vec2> u0 {
-          {0.5f, 0.5f},
-          {0.3f, 0.8f},
-          {0.3f, 0.8f},
-          {0.8f, 0.3f},
-          {0.1f, 0.2f},
-          {0.1f, 0.8f},
-          {0.8f, 0.8f}
-  };
-  std::vector<float> h {3.0f, 1.0f, -2.f, -2.f, 1.5f, -1.5f, 7.f};
-  std::vector<float> sigma {0.9f, 0.2f, 0.8f, 0.3f, 0.24f, 15.f, 0.2f};
-  float z = 0.;
-  for(size_t i = 0 ; i < u0.size(); i++) {
-    float const d = norm(vec2(u,v)-u0[i]) / sigma[i];
-    z += h[i] * std::exp(-d*d);
-  }
-
-  const float scaling = 3.f;
-  const int octave = 9;
-  const float persistency = 0.5f;
-  const float height = 3.7f;
+  const float scaling = 2.f;
+  const int octave = 3;
+  const float persistency = 0.6f;
+  const float height = 4.5f;
 
   // Evaluate Perlin noise
-  const float noise = perlin(scaling*u, scaling*v, octave, persistency);
-  z += height * noise;
-   return z;
+  return height * perlin(scaling*u, scaling*v, octave, persistency);
 }
 
-// Evaluate 3D position of the terrain for any (u,v) \in [0,1]
+// Evaluate 3D position of the terrain for any (u,v) \in R
 vec3 evaluate_terrain(float u, float v)
 {
   const vec2 xy = terrain_uv_to_xy({u,v});

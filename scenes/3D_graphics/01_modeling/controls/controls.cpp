@@ -96,7 +96,7 @@ vcl::vec3 get_move_dir_from_user_input(GLFWwindow* window) {
 }
 
 
-void scene_model::keyboard_input(scene_structure& scene, GLFWwindow* window, int key, int scancode, int action, int mods) {
+void scene_model::keyboard_input(scene_structure& scene, GLFWwindow* window, int key, int scancode, int action, int) {
   if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
     /* Escape key -> quit game */
     std::cerr << "Stopping now.\n";
@@ -131,6 +131,7 @@ void scene_model::keyboard_input(scene_structure& scene, GLFWwindow* window, int
       //if (glfwRawMouseMotionSupported()) {
       //  glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
       //}
+      // Disable mouse
     }
 
   }

@@ -10,7 +10,6 @@ using namespace vcl;
 
 
 void AnimatedFish::draw(const vcl::camera_scene& camera, const light_animation_data & light_data, DrawType draw_type) {
-  model.uniform.transform = transform;
   vcl::draw(model, camera, light_data, draw_type);
 }
 
@@ -37,5 +36,5 @@ void AnimatedFish::update_transform() {
 
   // use TBF frame (using quaternion slerp)
   mat3 R {trajectory.normal, trajectory.binormal, trajectory.tangent};
-  transform = {trajectory.position, R};
+  model.uniform.transform = {trajectory.position, R};
 }

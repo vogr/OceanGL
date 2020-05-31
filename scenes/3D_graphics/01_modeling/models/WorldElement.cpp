@@ -3,3 +3,11 @@
 //
 
 #include "WorldElement.h"
+
+
+float WorldElement::signed_distance(vcl::vec3 p) const {
+  auto pos = getPosition();
+  return vcl::norm(p - pos) - radius;
+}
+
+

@@ -8,7 +8,7 @@
 
 #include "../trajectories/Trajectory.h"
 
-class AnimatedFish : public WorldElement {
+class AnimatedFish : public DrawableWorldElement {
 public:
   vcl::mesh_drawable model;
   Trajectory trajectory; // trajectory includes its own timer
@@ -21,10 +21,12 @@ public:
   { };
 
   void draw(const vcl::camera_scene& camera, const vcl::light_animation_data & ca_data, vcl::DrawType draw_type) override;
-  void update();
+    vcl::vec3 getPosition() const override {return model.uniform.transform.translation; };
+    void setPosition(vcl::vec3 p) override {model.uniform.transform.translation = p; };
+    void update();
 
 private:
-  void update_transform();
+    void update_transform();
 };
 
 

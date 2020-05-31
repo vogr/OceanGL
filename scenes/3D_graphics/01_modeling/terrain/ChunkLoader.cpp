@@ -7,6 +7,7 @@ ChunkLoader::ChunkLoader(GLuint _texture_id, int _radius_to_load)
 {
   int const N_PLANTS = 24;
   billboards_models.reserve(N_PLANTS);
+  billboards_models_view.reserve(N_PLANTS);
   std::string const root = "scenes/3D_graphics/01_modeling/assets/ocean_plants/ocean_plant";
   std::string const ext = ".png";
 
@@ -39,8 +40,8 @@ ChunkLoader::ChunkLoader(GLuint _texture_id, int _radius_to_load)
       // it will then be translated to its final position in the chunks
       // by a simple translation
       cross.set_texture_id(tex_id);
-      auto w = std::make_unique<CrossBillboard>(cross, affine_transform{{0,0,z_correction[i]}, {}, scale}, radius);
-      billboards_models.push_back(std::move(w));
+      billboards_models.emplace_back(cross, affine_transform{{0,0,z_correction[i]}, {}, scale}, radius);
+      billboards_models_view.push_back(std::ref(billboards_models.back()));
     }
     /*
     {
@@ -56,7 +57,7 @@ ChunkLoader::ChunkLoader(GLuint _texture_id, int _radius_to_load)
 }
 
 void ChunkLoader::load_chunk(int i, int j) {
-  loaded_chunks.emplace(std::make_tuple(i,j), Chunk{i,j, texture_id, billboards_models, n_billboards_per_chunk});
+  loaded_chunks.emplace(std::make_tuple(i,j), Chunk{i,j, texture_id, billboards_models_view, n_billboards_per_chunk});
 }
 
 void ChunkLoader::unload_chunk(int i, int j) {

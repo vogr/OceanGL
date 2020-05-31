@@ -23,10 +23,7 @@ public:
     GLuint texture_id{0};
     int radius_to_load = 3; // Manhattan distance
 
-    // Keep a model for each type of billboard : each one is a texture
-    // on a mesh. We make use of polymorphism, and therefore we need
-    // to use pointers so as not to slice our objects
-    std::vector<std::unique_ptr<WorldElement>> billboards_models;
+
     unsigned int n_billboards_per_chunk = 15;
 
     ChunkLoader() = default;
@@ -43,4 +40,11 @@ public:
 private:
     map_t loaded_chunks;
     std::tuple<int,int> center {0,0};
+
+    // Keep a model for each type of billboard : each one is a texture
+    // on a mesh. We make use of polymorphism, and therefore we need
+    // to use pointers so as not to slice our objects
+    std::vector<CrossBillboard> billboards_models;
+    // List of references to pass to the chunk builder functions
+    std::vector<std::reference_wrapper<CrossBillboard>> billboards_models_view;
 };

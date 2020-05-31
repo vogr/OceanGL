@@ -14,8 +14,7 @@ public:
     void update_mouse_move(camera_scene& camera, GLFWwindow* window, float x1, float y1);
     void update_mouse_click(camera_scene& camera, GLFWwindow* window,  int button, int action, int mods);
 
-    bool update = true;
-
+    bool in_focus = false;
 private:
 
     /** previous mouse position (x-coordinate) */

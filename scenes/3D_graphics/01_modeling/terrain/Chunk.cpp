@@ -1,12 +1,11 @@
 #include "Chunk.hpp"
 
-#include "../models/billboards.h"
 
 #include <algorithm>
 #include <memory>
 
 // Generate terrain mesh for chunk (i,j)
-Chunk::Chunk(int i, int j, GLuint texture_id, std::vector<std::unique_ptr<WorldElement>> &billboards_models, unsigned int n_billboard_per_chunk)
+Chunk::Chunk(int i, int j, GLuint texture_id, std::vector<std::reference_wrapper<CrossBillboard>> const &billboards_models, unsigned int n_billboard_per_chunk)
 : chunk_id{i,j}
 {
   //TODO: Seed with deterministic int based on chunk_id
@@ -31,7 +30,6 @@ Chunk::Chunk(int i, int j, GLuint texture_id, std::vector<std::unique_ptr<WorldE
       // Probably best to keep an integer factor.
       float const tv = u * 5;
       float const tu = v * 5;
-
 
       // Compute coordinates
       terrain_cpu.position[kv+N*ku] = evaluate_terrain(u,v);
@@ -71,9 +69,9 @@ void Chunk::draw(const vcl::camera_scene &camera, const vcl::light_animation_dat
   // Sort the billboards from furthest to closest...
 
   vec3 const p = camera.camera_position();
-  std::sort(billboards.begin(), billboards.end(),[&p](std::unique_ptr<WorldElement> const & e1, std::unique_ptr<WorldElement> const & e2) {
-    vec3 const u1 = e1->transform.translation - p;
-    vec3 const u2 = e2->transform.translation - p;
+  std::sort(billboards.begin(), billboards.end(),[&p](std::unique_ptr<DrawableWorldElement> const & e1, std::unique_ptr<DrawableWorldElement> const & e2) {
+    vec3 const u1 = e1->getPosition() - p;
+    vec3 const u2 = e2->getPosition() - p;
     float const d1_2 = dot(u1,u1);
     float const d2_2 = dot(u2,u2);
     return d1_2 > d2_2;
@@ -89,20 +87,26 @@ void Chunk::draw(const vcl::camera_scene &camera, const vcl::light_animation_dat
 }
 
 
-void Chunk::populate_billboards(std::vector<std::unique_ptr<WorldElement>> const & billboards_models, unsigned int n_billboard_per_chunk) {
+void Chunk::populate_billboards(std::vector<std::reference_wrapper<CrossBillboard>> const &billboards_models, unsigned int n_billboard_per_chunk) {
+  // Ugly hack ! We'd like to pass the std::vector<std::unique_ptr<DrawableWorldElement>>& as a std::vector<std::unique_ptr<WorldElement>>&
+  std::vector<std::reference_wrapper<WorldElement>> refs;
+  for(auto b : billboards_models) {
+    refs.emplace_back(b);
+  }
   for (int i = 0; i < n_billboard_per_chunk; i++) {
     int itexture = static_cast<int>(std::floor(vcl::rand_interval(0, billboards_models.size() - 1)));
-    auto &el_to_add = billboards_models[itexture];
+    auto el_to_add = billboards_models[itexture].get().clone();
 
-    vec3 next_pos = get_available_position(billboards, el_to_add->radius);
+    el_to_add->transform.translation += get_available_position(refs, el_to_add->radius);
+    el_to_add->transform.rotation = vcl::rotation_from_axis_angle_mat3({0,0,1}, rand_interval(0.f, M_PI / 2));
 
-    billboards.emplace_back(el_to_add->clone());
-    billboards.back()->transform.translation += next_pos;
+    billboards.emplace_back(el_to_add);
+    // Keep z_correction
   }
 }
 
 
-vec3 Chunk::get_available_position(std::vector<std::unique_ptr<WorldElement>> const & elements, double min_radius) const {
+vec3 Chunk::get_available_position(std::vector<std::reference_wrapper<WorldElement>> const & elements, double min_radius) const {
   int const i = std::get<0>(chunk_id), j = std::get<1>(chunk_id);
   vec3 next_pos {};
   bool found = false;
@@ -111,9 +115,11 @@ vec3 Chunk::get_available_position(std::vector<std::unique_ptr<WorldElement>> co
     float v = j + rand_interval(0.f, 1.f);
     next_pos = evaluate_terrain(u,v);
     found = true;
-    for(auto const & el : elements) {
-      auto d = norm(vec3{el->transform.translation.x - next_pos.x, el->transform.translation.y - next_pos.y, 0.f});
-      if(d <  min_radius + el->radius) {
+    for(auto el_wrap : elements) {
+      auto & el = el_wrap.get();
+      auto p = el.getPosition();
+      auto d = norm(vec3{p.x - next_pos.x, p.y - next_pos.y, 0.f});
+      if(d <  min_radius + el.radius) {
         found = false;
         break;
       }

@@ -7,6 +7,7 @@
 #include "models/models.h"
 #include "models/billboards.h"
 
+#include "boids/AllBoidsManager.hpp"
 #include "boids/Boid.hpp"
 
 #include "terrain/ChunkLoader.hpp"
@@ -53,13 +54,18 @@ struct scene_model : scene_base
     /** Models and visual elements */
     mesh_drawable shark_model;
     mesh_drawable fish_model;
-    std::vector<Boid> all_boids;
+
+
+
 
     /** Animation */
     CameraPhysics camera_physics;
 
     AnimatedFish shark;
     AnimatedFish chased_fish;
+
+    // Boids
+    AllBoidsManager boids_manager;
 
     /** Caustics (light effect underwater) */
     // Caustics animation.

@@ -13,7 +13,7 @@ using namespace vcl;
 
 /** This function is called before the beginning of the animation loop
     It is used to initialize all part-specific data */
-void scene_model::setup_data(std::map<std::string,GLuint>& shaders, scene_structure& scene, gui_structure& gui) {
+void scene_model::setup_data(std::map<std::string,GLuint>& shaders, scene_structure& scene, gui_structure&) {
   /** Setup user camera */
   scene.camera.scale = 0.0f;
   // Initial position :
@@ -22,6 +22,8 @@ void scene_model::setup_data(std::map<std::string,GLuint>& shaders, scene_struct
 
   /** Setup light source */
   scene.light_data = light_animation_data{shaders["mesh_depth_pass"], shaders["mesh_draw_pass"]};
+  //scene.light_data.fog_intensity_exp = 0.012;
+  scene.light_data.fog_intensity_exp = 0.0;
 
   // Load the 32 sprites of the the caustics animation
   std::string const root = "scenes/3D_graphics/01_modeling/assets/caustics/caust";
@@ -64,12 +66,14 @@ void scene_model::setup_data(std::map<std::string,GLuint>& shaders, scene_struct
 
   // Shark
   shark = AnimatedFish(shark_model);
+  shark.radius = 10;
   shark.trajectory.init(make_shark_trajectory_keyframes());
   shark.trajectory.timer.stop();
   shark.trajectory.timer.t = 0.1f * shark.trajectory.timer.t_min + 0.9f * shark.trajectory.timer.t_max;;
 
   // Fish chased by shark
   chased_fish = AnimatedFish{fish_model};
+  chased_fish.radius = 2;
   chased_fish.trajectory.init(make_shark_trajectory_keyframes());
   chased_fish.trajectory.timer.stop();
   chased_fish.trajectory.timer.t = chased_fish.trajectory.timer.t_min;
@@ -77,12 +81,23 @@ void scene_model::setup_data(std::map<std::string,GLuint>& shaders, scene_struct
   shark.trajectory.timer.start();
 
   // Boids
-  for(int i = 0; i < 150; i++){
-    vcl::vec3 p {rand_interval(-5,5),rand_interval(-5,5),rand_interval(5,30)};
-    vcl::vec3 d {rand_interval(-1,1),rand_interval(-1,1),rand_interval(-1,1)};
-    all_boids.emplace_back(p,d);
+  int const N_DIVISIONS = 50;
+  boids_manager = AllBoidsManager(N_DIVISIONS);
+  // Ideally we need : radius_of_vision < (space_grid_size / N_DIVISIONS)
+  boids_manager.space_grid_size = 600.f;
+  boids_manager.boids_settings.radius_of_vision = 10.f;
+  boids_manager.fish_model = fish_model;
+  size_t const N_BOIDS = 500;
+  for(size_t i = 0; i < N_BOIDS; i++){
+    float L = 5.f;
+    vcl::vec3 p {rand_interval(-L,L),rand_interval(-L,L),30 + rand_interval(-L,L)};
+    vcl::vec3 d {rand_interval(-1,1),rand_interval(-1,1),rand_interval(-0.5,0.5)};
+    boids_manager.add_boid(p,d);
   }
+  boids_manager.obstacles_to_consider.emplace_back(shark);
 
+  // Restart main_timer to prevent huge dt on first draw
+  main_timer.update();
 }
 
 
@@ -100,37 +115,28 @@ void scene_model::frame_draw(std::map<std::string,GLuint>& shaders, scene_struct
   //TODO: add back move_and_slide to enable collisions with ground
   //camera_physics.move_and_slide(scene.camera, get_move_dir_from_user_input(gui.window), dt);
   camera_physics.move_in_dir(scene.camera, get_move_dir_from_user_input(gui.window), dt);
-  {
-    // Load the chunks around the player
-    auto p = scene.camera.camera_position();
-
-    std::cout << scene.camera.camera_position() << "\n";
-    std::cout << terrain_xy_to_uv({p.x, p.y}) << "\n";
-
-    terrain.update_center(p);
-    // Move light source (because caustics texture are only visible in a small radius around the light source)
-    scene.light_data.light_camera.translation = {-p.x, -p.y, -150};
-  }
-
-  {
-    // choose correct sprite in caustics animation
-    caustics_animation_timer.update();
-    int caustics_sprite_number = static_cast<int>(caustics_animation_timer.t);
-    scene.light_data.caustics_sprite_id = caustics_animation_sprites_ids[caustics_sprite_number];
-  }
+ {
+   // Load the chunks around the player
+   auto p = scene.camera.camera_position();
+   terrain.update_center(p);
+   // Move light source (because caustics texture are only visible in a small radius around the light source)
+   scene.light_data.light_camera.translation = {-p.x, -p.y, -150};
+ }
+ {
+   // choose correct sprite in caustics animation
+   caustics_animation_timer.update();
+   int caustics_sprite_number = static_cast<int>(caustics_animation_timer.t);
+   scene.light_data.caustics_sprite_id = caustics_animation_sprites_ids[caustics_sprite_number];
+ }
 
 
   // Update shark and fish positions
   shark.update();
   chased_fish.update();
 
-  // Move boids
-  for (int i = 0 ; i < 5 ; i++) {
-    for(Boid& f : all_boids){
-      f.update(all_boids, dt / 3);
-    }
-  }
-
+  // Move boids (+ warparounf in cube centered on camera position)
+  boids_manager.update_all_boids(scene.camera.camera_position(), dt);
+  
 
   /**
    * Rendering loop
@@ -176,18 +182,11 @@ void scene_model::frame_draw(std::map<std::string,GLuint>& shaders, scene_struct
     shark.draw(scene.camera, scene.light_data, pass);
     chased_fish.draw(scene.camera, scene.light_data, pass);
 
-    for (auto & f : all_boids) {
-      fish_model.uniform.transform.rotation = mat3{{1,0,0}, {0,1,0}, f.direction};;
-      fish_model.uniform.transform.translation = f.position;
-      draw(fish_model, scene.camera, scene.light_data, pass);
-    }
+    boids_manager.draw_all_boids(scene.camera, scene.light_data, pass);
 
     terrain.draw(scene.camera, scene.light_data, pass);
 
-  }
-
-
-
+    }
 }
 
 
@@ -195,6 +194,17 @@ void scene_model::frame_draw(std::map<std::string,GLuint>& shaders, scene_struct
 
 void scene_model::set_gui() {
   ImGui::Checkbox("Wireframe", &gui_scene.wireframe);
+  ImGui::SliderFloat("MaxSpeed", &boids_manager.boids_settings.maxSpeed, 0.f, 150.f);
+  ImGui::SliderFloat("MaxSteer", &boids_manager.boids_settings.maxSteerForce, 0.f, 150.f);
+  ImGui::SliderFloat("AlignmentWeigh", &boids_manager.boids_settings.alignmentWeight, 0.f, 5.f);
+  ImGui::SliderFloat("CohesionWeight", &boids_manager.boids_settings.cohesionWeight, 0.f, 5.f);
+  ImGui::SliderFloat("SeparationWeight", &boids_manager.boids_settings.seperationWeight, 0.f, 5.f);
+  ImGui::SliderFloat("Warparound", &boids_manager.space_grid_size, 0.f, 1000.f);
+  ImGui::SliderFloat("z_min", &boids_manager.boids_settings.z_min, 0.f, 150.f);
+  ImGui::SliderFloat("z_max", &boids_manager.boids_settings.z_max, 0.f, 150.f);
+  ImGui::SliderFloat("Radius of visison", &boids_manager.boids_settings.radius_of_vision, 0.f, 100.f);
+  ImGui::SliderFloat("Obstacle avoidance dist", &boids_manager.boids_settings.raymarcher.max_depth, 0.f, 100.f);
+  ImGui::SliderFloat("Avoidance weight", &boids_manager.boids_settings.avoidCollisionWeight, 0.f, 30.f);
 }
 
 

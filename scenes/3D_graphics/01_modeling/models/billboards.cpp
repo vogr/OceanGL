@@ -62,7 +62,6 @@ void FlatBillboard::draw(const vcl::camera_scene& camera, const light_animation_
   glDepthMask(false);
   // Display a billboard always facing the camera direction
   // ********************************************************** //
-  model.billboard.uniform.transform = transform;
   model.billboard.uniform.transform.rotation = camera.orientation;
   vcl::draw(model.billboard, camera, light_data, draw_type);
 
@@ -97,7 +96,7 @@ void CrossBillboard::draw(const vcl::camera_scene& camera, const light_animation
   float const sy = dot(camera_to_billboard, transform.rotation * vec3{0,1,0});
 
   for (int i = 0; i < 4; i++) {
-    model.billboard[i].uniform.transform = transform;
+    model.billboard[i].uniform.transform= transform;
   }
 
   if (sy >= 0) {
