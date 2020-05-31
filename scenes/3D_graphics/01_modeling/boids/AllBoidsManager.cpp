@@ -190,7 +190,7 @@ void AllBoidsManager::update_applied_forces(Boid & boid, float dt) const{
   if (numPerceivedFlockmates > 0) {
     auto alignmentForce = boid.steer_towards(avgFlockDirection, dt) * boids_settings.alignmentWeight;
     auto cohesionForce = boid.steer_towards(cohesionDirection, dt) * boids_settings.cohesionWeight;
-    auto separationForce = boid.steer_towards(separationDirection, dt) * boids_settings.seperationWeight;
+    auto separationForce = boid.steer_towards(separationDirection, dt) * boids_settings.separationWeight;
 
     //std::cout << "align:" << norm(alignmentForce) << " c: " << norm(cohesionForce) << " s: " << norm(separationForce);
     boid.applied_forces += alignmentForce;

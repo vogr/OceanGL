@@ -27,8 +27,8 @@ AnimatedFish SharksManager::make_shark_at_position(vcl::vec3 terrain_xyz) {
 
   vcl::vec3 position = terrain_xyz + vcl::vec3{0,0, vcl::rand_interval(10,50)};
   float shark_speed = vcl::rand_interval(20.f, 30.f);
-  float radius = vcl::rand_interval(30.f, 200.f);
-  float z_range = vcl::rand_interval(0.f, 8.f);
+  float radius = vcl::rand_interval(70.f, 200.f);
+  float z_range = vcl::rand_interval(0.f, 20.f);
   bool clockwise = (vcl::rand_interval() < 0.5f);
 
   shark.trajectory.init(make_random_shark_keyframes_from_starting_point(position, radius, shark_speed, z_range, clockwise, N_KEYFRAMES));
@@ -51,7 +51,9 @@ vcl::buffer<keyframe> SharksManager::make_random_shark_keyframes_from_starting_p
   int d = (clockwise ? -1 : 1);
 
   // dt = length on one arc / speed
-  float dt = 2.f * M_PI * radius / (n_keyframes * speed);
+  float dt = std::floor(2.f * M_PI * radius / (n_keyframes * speed));
+  dt = 1.f;
+
   float t = 0.;
   for (int i = -1; i < n_keyframes + 2; i++) {
     auto i_f = static_cast<float>(i) * d;

@@ -22,7 +22,8 @@ void scene_model::setup_data(std::map<std::string,GLuint>& shaders, scene_struct
 
   /** Setup light source */
   scene.light_data = light_animation_data{shaders["mesh_depth_pass"], shaders["mesh_draw_pass"]};
-  scene.light_data.fog_intensity_exp = 0.012;
+  scene.light_data.fog_intensity_exp = 0.013;
+  scene.light_data.fog_intensity_linear = 0.10;
 
   // Load the 32 sprites of the the caustics animation
   std::string const root = "scenes/3D_graphics/01_modeling/assets/caustics/caust";
@@ -57,15 +58,23 @@ void scene_model::setup_data(std::map<std::string,GLuint>& shaders, scene_struct
 
 
   // Boids
-  int const N_DIVISIONS = 60;
+  int const N_DIVISIONS = 120;
   boids_manager = AllBoidsManager(N_DIVISIONS);
   // Ideally we need : radius_of_vision < (space_grid_size / N_DIVISIONS)
   boids_manager.space_grid_size = 600.f;
-  boids_manager.boids_settings.radius_of_vision = 10.f;
+  boids_manager.boids_settings.radius_of_vision = 5.f;
+
+  boids_manager.boids_settings.maxSpeed = 24;
+  boids_manager.boids_settings.maxSteerForce = 7;
+  boids_manager.boids_settings.alignmentWeight = 1.263;
+  boids_manager.boids_settings.cohesionWeight = 1.521;
+  boids_manager.boids_settings.separationWeight = 1.675;
+
+
   boids_manager.fish_model = fish_model;
-  size_t const N_BOIDS = 450;
+  size_t const N_BOIDS = 1200;
   for(size_t i = 0; i < N_BOIDS; i++){
-    float L = 5.f;
+    float L = 10.f;
     vcl::vec3 p {rand_interval(-L,L),rand_interval(-L,L),30 + rand_interval(-L,L)};
     vcl::vec3 d {rand_interval(-1,1),rand_interval(-1,1),rand_interval(-0.5,0.5)};
     boids_manager.add_boid(p,d);
@@ -82,6 +91,7 @@ void scene_model::setup_data(std::map<std::string,GLuint>& shaders, scene_struct
           RENDER_RADIUS
   };
   terrain.n_billboards_per_chunk = 6;
+  terrain.shark_spawn_probability = 0.12;
 
 
 
@@ -188,7 +198,7 @@ void scene_model::set_gui() {
   ImGui::SliderFloat("MaxSteer", &boids_manager.boids_settings.maxSteerForce, 0.f, 150.f);
   ImGui::SliderFloat("AlignmentWeigh", &boids_manager.boids_settings.alignmentWeight, 0.f, 5.f);
   ImGui::SliderFloat("CohesionWeight", &boids_manager.boids_settings.cohesionWeight, 0.f, 5.f);
-  ImGui::SliderFloat("SeparationWeight", &boids_manager.boids_settings.seperationWeight, 0.f, 5.f);
+  ImGui::SliderFloat("SeparationWeight", &boids_manager.boids_settings.separationWeight, 0.f, 5.f);
   ImGui::SliderFloat("Warparound", &boids_manager.space_grid_size, 0.f, 1000.f);
   ImGui::SliderFloat("z_min", &boids_manager.boids_settings.z_min, 0.f, 150.f);
   ImGui::SliderFloat("z_max", &boids_manager.boids_settings.z_max, 0.f, 150.f);

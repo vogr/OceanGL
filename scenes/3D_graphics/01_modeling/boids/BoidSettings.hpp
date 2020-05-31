@@ -20,7 +20,7 @@ class BoidSettings{
         // Weights of the different rules
         float alignmentWeight = 1.4f;
         float cohesionWeight = 1.8f;
-        float seperationWeight = 2.3f;
+        float separationWeight = 2.3f;
 
         // 4th rule : stay within slice [z_min, z_max] (approximately)
         float stayInBoundsWeight = 1.f;
