@@ -68,7 +68,7 @@ bool ChunkLoader::is_chunk_loaded(int i, int j) {
   return (loaded_chunks.find({i,j}) != loaded_chunks.end());
 }
 
-void ChunkLoader::update_center(vcl::vec3 camera_position) {
+void ChunkLoader::update_center(vcl::vec3 camera_position, SharksManager & shark_manager) {
 
   vec2 uv = terrain_xy_to_uv({camera_position.x, camera_position.y});
 
@@ -82,6 +82,11 @@ void ChunkLoader::update_center(vcl::vec3 camera_position) {
       int k = i + s, l = j + t;
       if(! is_chunk_loaded(k,l)) {
         load_chunk(k,l);
+
+        // with a given probability, spawn shark with initial position in the chunk (k,l)
+        if (rand_interval(0.f,1.f) < shark_spawn_probability) {
+          shark_manager.spawn_shark_in_chunk(k,l);
+        }
       }
     }
   }

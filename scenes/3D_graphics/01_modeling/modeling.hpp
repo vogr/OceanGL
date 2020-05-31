@@ -10,6 +10,8 @@
 #include "boids/AllBoidsManager.hpp"
 #include "boids/Boid.hpp"
 
+#include "sharks_manager/SharksManager.hpp"
+
 #include "terrain/ChunkLoader.hpp"
 
 
@@ -61,8 +63,8 @@ struct scene_model : scene_base
     /** Animation */
     CameraPhysics camera_physics;
 
-    AnimatedFish shark;
-    AnimatedFish chased_fish;
+    // Sharks
+    SharksManager shark_manager;
 
     // Boids
     AllBoidsManager boids_manager;

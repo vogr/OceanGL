@@ -6,6 +6,9 @@
 
 #include "Chunk.hpp"
 
+#include "../sharks_manager/SharksManager.hpp"
+
+
 class ChunkLoader {
 private:
     // Define hash function for tuple<int,int> and make a custom unoredered_map using
@@ -23,7 +26,7 @@ public:
     GLuint texture_id{0};
     int radius_to_load = 3; // Manhattan distance
 
-
+    float shark_spawn_probability = 0.07;
     unsigned int n_billboards_per_chunk = 15;
 
     ChunkLoader() = default;
@@ -33,9 +36,11 @@ public:
     void unload_chunk(int i, int j);
     bool is_chunk_loaded(int i, int j);
 
-    void update_center(vcl::vec3 camera_position);
+    void update_center(vcl::vec3 camera_position, SharksManager & shark_manager);
 
     void draw(const vcl::camera_scene &camera, const vcl::light_animation_data &light_data, vcl::DrawType draw_type);
+
+    std::vector<std::reference_wrapper<WorldElement>> get_obstacles_in_chunk(int i, int j);
 
 private:
     map_t loaded_chunks;

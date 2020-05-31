@@ -224,6 +224,18 @@ void AllBoidsManager::update_applied_forces(Boid & boid, float dt) const{
     boid.applied_forces += boid.steer_towards(vcl::normalize(vcl::vec3{boid.direction.x, boid.direction.y, 0.}), dt) * boids_settings.horizontality_weight;
   }
 
+  // Shark avoidance
+  {
+    vcl::vec3 avoidance_dir_weighted = boid.avoid_all_obstacles_weighted_dir(shark_refs);
+    float w = vcl::norm(avoidance_dir_weighted);
+
+    if (w != 0.f) {
+      vcl::vec3 avoidance_dir = avoidance_dir_weighted / w;
+      boid.applied_forces += boid.steer_towards(avoidance_dir, dt) * w * boids_settings.avoidCollisionWeight;
+    }
+  }
+
+  /*
   // Obstacle avoidance
   {
     vcl::vec3 avoidance_dir_weighted = boid.avoid_all_obstacles_weighted_dir(obstacles_to_consider);
@@ -234,7 +246,7 @@ void AllBoidsManager::update_applied_forces(Boid & boid, float dt) const{
       boid.applied_forces += boid.steer_towards(avoidance_dir, dt) * w * boids_settings.avoidCollisionWeight;
     }
   }
-
+  */
 }
 
 

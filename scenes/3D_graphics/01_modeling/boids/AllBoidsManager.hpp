@@ -34,9 +34,11 @@ public:
   vcl::mesh_drawable fish_model;
   BoidSettings boids_settings;
 
-  std::vector<std::reference_wrapper<WorldElement>> obstacles_to_consider;
 
-    // Prepare boid manager :
+  std::vector<std::reference_wrapper<WorldElement>> shark_refs;
+  //std::reference_wrapper<ChunkLoader>
+
+  // Prepare boid manager :
   // - empty space grid
   // - empty boids list
   explicit AllBoidsManager(unsigned int divisions);

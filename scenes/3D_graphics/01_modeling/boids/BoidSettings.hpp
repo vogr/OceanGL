@@ -25,7 +25,7 @@ class BoidSettings{
         // 4th rule : stay within slice [z_min, z_max] (approximately)
         float stayInBoundsWeight = 1.f;
         float z_min = 12.f;
-        float z_max = 50.f;
+        float z_max = 55.f;
 
         //[Header ("Collisions")]
         //LayerMask obstacleMask;

@@ -22,8 +22,7 @@ void scene_model::setup_data(std::map<std::string,GLuint>& shaders, scene_struct
 
   /** Setup light source */
   scene.light_data = light_animation_data{shaders["mesh_depth_pass"], shaders["mesh_draw_pass"]};
-  //scene.light_data.fog_intensity_exp = 0.012;
-  scene.light_data.fog_intensity_exp = 0.0;
+  scene.light_data.fog_intensity_exp = 0.012;
 
   // Load the 32 sprites of the the caustics animation
   std::string const root = "scenes/3D_graphics/01_modeling/assets/caustics/caust";
@@ -42,21 +41,13 @@ void scene_model::setup_data(std::map<std::string,GLuint>& shaders, scene_struct
   caustics_animation_timer.t_max = 32.;
   caustics_animation_timer.start();
 
-
-  /** Prepare chunk loader */
-  int const RENDER_RADIUS = 6;
-  terrain = ChunkLoader{
-          create_texture_gpu( image_load_png("scenes/3D_graphics/01_modeling/assets/floor.png"), GL_REPEAT, GL_REPEAT),
-          RENDER_RADIUS
-  };
-  terrain.n_billboards_per_chunk = 6;
-
   /** Prepare drawable elements : meshes and textures */
 
   // Prepare shark model
   shark_model = mesh_drawable{mesh_load_file_obj("scenes/3D_graphics/01_modeling/assets/shark/Shark.obj")};
   shark_model.texture_id = create_texture_gpu( image_load_png("scenes/3D_graphics/01_modeling/assets/shark/greatwhiteshark.png"), GL_REPEAT, GL_REPEAT);
   shark_model.uniform.shading.specular = 0.1;
+  shark_model.normal_texture_id = create_texture_gpu( image_load_png("scenes/3D_graphics/01_modeling/assets/shark/greatwhiteshark_n.png"), GL_REPEAT, GL_REPEAT);
 
   // Prepare fish model
   fish_model = mesh_drawable{mesh_load_file_obj("scenes/3D_graphics/01_modeling/assets/Fish_v2/fish.obj")};
@@ -64,37 +55,35 @@ void scene_model::setup_data(std::map<std::string,GLuint>& shaders, scene_struct
 
   /** Animated models */
 
-  // Shark
-  shark = AnimatedFish(shark_model);
-  shark.radius = 10;
-  shark.trajectory.init(make_shark_trajectory_keyframes());
-  shark.trajectory.timer.stop();
-  shark.trajectory.timer.t = 0.1f * shark.trajectory.timer.t_min + 0.9f * shark.trajectory.timer.t_max;;
-
-  // Fish chased by shark
-  chased_fish = AnimatedFish{fish_model};
-  chased_fish.radius = 2;
-  chased_fish.trajectory.init(make_shark_trajectory_keyframes());
-  chased_fish.trajectory.timer.stop();
-  chased_fish.trajectory.timer.t = chased_fish.trajectory.timer.t_min;
-  chased_fish.trajectory.timer.start();
-  shark.trajectory.timer.start();
 
   // Boids
-  int const N_DIVISIONS = 50;
+  int const N_DIVISIONS = 40;
   boids_manager = AllBoidsManager(N_DIVISIONS);
   // Ideally we need : radius_of_vision < (space_grid_size / N_DIVISIONS)
-  boids_manager.space_grid_size = 600.f;
+  boids_manager.space_grid_size = 410.f;
   boids_manager.boids_settings.radius_of_vision = 10.f;
   boids_manager.fish_model = fish_model;
-  size_t const N_BOIDS = 500;
+  size_t const N_BOIDS = 450;
   for(size_t i = 0; i < N_BOIDS; i++){
     float L = 5.f;
     vcl::vec3 p {rand_interval(-L,L),rand_interval(-L,L),30 + rand_interval(-L,L)};
     vcl::vec3 d {rand_interval(-1,1),rand_interval(-1,1),rand_interval(-0.5,0.5)};
     boids_manager.add_boid(p,d);
   }
-  boids_manager.obstacles_to_consider.emplace_back(shark);
+
+  // Sharks
+  shark_manager = SharksManager(shark_model);
+
+  /** Prepare chunk loader */
+
+  int const RENDER_RADIUS = 6;
+  terrain = ChunkLoader{
+          create_texture_gpu( image_load_png("scenes/3D_graphics/01_modeling/assets/floor.png"), GL_REPEAT, GL_REPEAT),
+          RENDER_RADIUS
+  };
+  terrain.n_billboards_per_chunk = 6;
+
+
 
   // Restart main_timer to prevent huge dt on first draw
   main_timer.update();
@@ -116,9 +105,9 @@ void scene_model::frame_draw(std::map<std::string,GLuint>& shaders, scene_struct
   //camera_physics.move_and_slide(scene.camera, get_move_dir_from_user_input(gui.window), dt);
   camera_physics.move_in_dir(scene.camera, get_move_dir_from_user_input(gui.window), dt);
  {
-   // Load the chunks around the player
+   // Load the chunks around the player, eventually spawn sharks
    auto p = scene.camera.camera_position();
-   terrain.update_center(p);
+   terrain.update_center(p, shark_manager);
    // Move light source (because caustics texture are only visible in a small radius around the light source)
    scene.light_data.light_camera.translation = {-p.x, -p.y, -150};
  }
@@ -131,8 +120,10 @@ void scene_model::frame_draw(std::map<std::string,GLuint>& shaders, scene_struct
 
 
   // Update shark and fish positions
-  shark.update();
-  chased_fish.update();
+  shark_manager.update_all_sharks();
+
+  // Make boids consider sharks
+  boids_manager.shark_refs = shark_manager.get_shark_refs();
 
   // Move boids (+ warparounf in cube centered on camera position)
   boids_manager.update_all_boids(scene.camera.camera_position(), dt);
@@ -179,8 +170,7 @@ void scene_model::frame_draw(std::map<std::string,GLuint>& shaders, scene_struct
     // set correct viewport before drawing.
     glViewport(0, 0, width, height);
 
-    shark.draw(scene.camera, scene.light_data, pass);
-    chased_fish.draw(scene.camera, scene.light_data, pass);
+    shark_manager.draw_all_sharks(scene.camera, scene.light_data, pass);
 
     boids_manager.draw_all_boids(scene.camera, scene.light_data, pass);
 
