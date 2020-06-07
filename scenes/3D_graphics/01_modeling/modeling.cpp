@@ -72,7 +72,7 @@ void scene_model::setup_data(std::map<std::string,GLuint>& shaders, scene_struct
 
 
   boids_manager.fish_model = fish_model;
-  size_t const N_BOIDS = 1200;
+  size_t const N_BOIDS = 800;
   for(size_t i = 0; i < N_BOIDS; i++){
     float L = 10.f;
     vcl::vec3 p {rand_interval(-L,L),rand_interval(-L,L),30 + rand_interval(-L,L)};
@@ -111,9 +111,8 @@ void scene_model::frame_draw(std::map<std::string,GLuint>& shaders, scene_struct
    */
   float dt = main_timer.update();
 
-  //TODO: add back move_and_slide to enable collisions with ground
-  //camera_physics.move_and_slide(scene.camera, get_move_dir_from_user_input(gui.window), dt);
-  camera_physics.move_in_dir(scene.camera, get_move_dir_from_user_input(gui.window), dt);
+  // Move camera based on the user's input and handle collisions with ground
+  camera_physics.move_and_slide(scene.camera, get_move_dir_from_user_input(gui.window), dt);
  {
    // Load the chunks around the player, eventually spawn sharks
    auto p = scene.camera.camera_position();
