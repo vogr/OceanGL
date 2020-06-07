@@ -94,6 +94,19 @@ void scene_model::setup_data(std::map<std::string,GLuint>& shaders, scene_struct
   terrain.shark_spawn_probability = 0.12;
 
 
+  // Notify user of controls
+
+  std::cout << "\n\n*************************\n";
+  std::cout <<     "******* CONTROLS ********\n";
+  std::cout << "\t- Press F6 to toggle the mouse.\n";
+  std::cout << "\t- Press F11 to toggle fullscreen.\n";
+  std::cout << "\t- Once enabled, use the mouse to rotate the camera.\n";
+  std::cout << "\t- Use ZQSD + SPACE + CTRL to move around.\n";
+  std::cout << "\t- Press SHIFT to move faster.\n";
+  std::cout << "\n";
+  std::cout << "Enjoy the scenery!\n\n";
+
+
 
   // Restart main_timer to prevent huge dt on first draw
   main_timer.update();
