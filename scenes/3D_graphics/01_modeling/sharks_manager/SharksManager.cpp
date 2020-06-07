@@ -26,19 +26,18 @@ AnimatedFish SharksManager::make_shark_at_position(vcl::vec3 terrain_xyz) {
   size_t N_KEYFRAMES = 40;
 
   vcl::vec3 position = terrain_xyz + vcl::vec3{0,0, vcl::rand_interval(10,50)};
-  float shark_speed = vcl::rand_interval(20.f, 30.f);
   float radius = vcl::rand_interval(70.f, 200.f);
-  float z_range = vcl::rand_interval(0.f, 20.f);
+  float z_range = vcl::rand_interval(0.f, 25.f);
   bool clockwise = (vcl::rand_interval() < 0.5f);
 
-  shark.trajectory.init(make_random_shark_keyframes_from_starting_point(position, radius, shark_speed, z_range, clockwise, N_KEYFRAMES));
+  shark.trajectory.init(make_random_shark_keyframes_from_starting_point(position, radius, z_range, clockwise, N_KEYFRAMES));
   shark.trajectory.timer.t = shark.trajectory.timer.t_min;
   return shark;
 }
 
 
 
-vcl::buffer<keyframe> SharksManager::make_random_shark_keyframes_from_starting_point(vcl::vec3 starting_point, float radius, float speed, float z_range, bool clockwise, int n_keyframes) {
+vcl::buffer<keyframe> SharksManager::make_random_shark_keyframes_from_starting_point(vcl::vec3 starting_point, float radius, float z_range, bool clockwise, int n_keyframes) {
   assert(n_keyframes >= 2);
 
   // Keyframes should end up like this for a closed trajectory :
@@ -50,9 +49,7 @@ vcl::buffer<keyframe> SharksManager::make_random_shark_keyframes_from_starting_p
 
   int d = (clockwise ? -1 : 1);
 
-  // dt = length on one arc / speed
-  float dt = std::floor(2.f * M_PI * radius / (n_keyframes * speed));
-  dt = 1.f;
+  float dt = 1.f;
 
   float t = 0.;
   for (int i = -1; i < n_keyframes + 2; i++) {
@@ -62,7 +59,7 @@ vcl::buffer<keyframe> SharksManager::make_random_shark_keyframes_from_starting_p
 
     float x = center.x + radius * co;
     float y = center.y + radius * si;
-    float z = center.z + z_range * static_cast<float>(std::abs(std::sin(M_PI * i_f / n_keyframes)));
+    float z = center.z + z_range * static_cast<float>((1. - std::cos(2 * M_PI * i_f / n_keyframes) / 2.));
     trajectory_keyframes.push_back({{x, y, z}, t});
     t += dt;
   }
