@@ -332,7 +332,7 @@ d'implémentation :
 
 
 Notre méthode de simulation de caustiques s'inspire de celle décrite par
-Mark [^2] : une texture animée représentant les fameux cercles de
+Mark Kilgard [^2] : une texture animée représentant les fameux cercles de
 lumière des caustiques est projetée depuis la source de lumière sur le
 monde. Nous avons complété sa méthode en ajoutant du placage d'ombre
 (*shadowmapping*). Pour expliquer cette méthode, il est intéressant de
