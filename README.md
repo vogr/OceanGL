@@ -1,6 +1,8 @@
 
 # Création de scène 3D : *Deep in the Shark Sea*
 
+~ [Amine Chaabouni](https://github.com/amine-chaabouni) et [Valentin Ogier](https://github.com/vogr)
+
 ## Compilation et execution
 
 ```console
