@@ -1,6 +1,14 @@
 
 # Création de scène 3D : *Deep in the Shark Sea*
 
+## Compilation et execution
+
+```console
+$ git clone https://github.com/vogr/OceanGL
+$ cd OceanGL
+$ ./build.sh
+$ ./build/pgm
+```
 
 ## Introduction
 
