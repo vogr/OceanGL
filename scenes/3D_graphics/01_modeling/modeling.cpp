@@ -13,7 +13,7 @@ using namespace vcl;
 
 /** This function is called before the beginning of the animation loop
     It is used to initialize all part-specific data */
-void scene_model::setup_data(std::map<std::string,GLuint>& shaders, scene_structure& scene, gui_structure&) {
+void scene_model::setup_data(std::map<std::string,GLuint>& shaders, scene_structure& scene, gui_structure& gui) {
   /** Setup user camera */
   scene.camera.scale = 0.0f;
   // Initial position :
@@ -103,10 +103,18 @@ void scene_model::setup_data(std::map<std::string,GLuint>& shaders, scene_struct
   std::cout << "\t- Once enabled, use the mouse to rotate the camera.\n";
   std::cout << "\t- Use ZQSD + SPACE + CTRL to move around.\n";
   std::cout << "\t- Press SHIFT to move faster.\n";
+  std::cout << "\t- Press ESC to exit.\n";
   std::cout << "\n";
   std::cout << "Enjoy the scenery!\n\n";
 
 
+  // Capture mouse
+  glfwSetInputMode(gui.window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+  // Enable fullscreen
+  auto primary_monitor = glfwGetPrimaryMonitor();
+  auto video_mode = glfwGetVideoMode(primary_monitor);
+  glfwSetWindowMonitor(gui.window, glfwGetPrimaryMonitor(), 0, 0, video_mode->width, video_mode->height, GLFW_DONT_CARE);
 
   // Restart main_timer to prevent huge dt on first draw
   main_timer.update();

@@ -1,6 +1,9 @@
 MIT License
 
 Copyright (c) 2020 Damien Rohmer <damien.rohmer@polytechnique.edu>
+Copyright (c) 2020 Amine Chaabouni <amine.chaabouni@polytechnique.edu>
+Copyright (c) 2020 Valentin Ogier <valentin.ogier@polytechnique.edu>
+
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

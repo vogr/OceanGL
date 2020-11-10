@@ -1,412 +1,431 @@
-# VCL
 
-- [Introduction](#Introduction)
-- [Compile the library](#Compilation)
-- [Basic usage of VCL structures](#Usage)
-  - [Vec](#vec)
-  - [Mat](#mat)
-  - [Transformations](#Transformations)
-  - [Buffers](#Buffers)
+# Création de scène 3D : *Deep in the Shark Sea*
 
 
-<a name="Introduction"></a>
 ## Introduction
 
 
-VCL - Visual Computing Library - is a simple lightweight library on top of OpenGL provided to ease learning of 3D programming while avoiding re-coding everything from scratch (matrices, mesh structures, etc.). The library provides several helper structure and functions to set up 3D scene with interactive and/or animated elements.
+Dans ce projet, notre objectif a été de créer un monde sous-marin qui
+pourrait être librement exploré. Créer une ambiance sous-marine
+nécessite de reproduire des objets et des phénomènes que l'on peut
+observer dans les profondeurs des océans. Les deux images de la Figure
+ci-dessous permettent d'en identifier certains :
+
+-   la présence de poissons, qui se déplacent généralement en bancs, et
+    adoptant des comportements de groupe complexes.
+
+-   la présence de caustiques , phénomène lumineux visible sur le fond
+    marin ou sur les poissons sous la forme de ronds de lumière en
+    mouvement, causé par la réfraction de la lumière du soleil à travers
+    les vaguelettes à la surface de l'eau.
+
+-   un phénomène d'absorption sélective des couleurs par l'eau conduit à
+    un assombrissement des objets les plus lointains, qui prennent alors
+    une teinte bleue ou violette et réduit la visibilité du plongeur.
+
+-   le déplacement d'un plongeur est différent de celui d'une personne
+    sur la terre ferme : la force de frottement qui s'oppose à son
+    mouvement et faible, et donc si le plongeur nage puis arrête tout
+    mouvement, il va continuer à avancer en décélérant lentement.
+
+-   la présence de végétation sous-marine : algues, coraux, et éponges
+    par exemple.
+
+-   espace extrêmement vaste, dont on ne voit pas d'extrémité.
+
+![](assets/shark-photo1.jpg)
+
+<em>Caustiques, ombre portée, et brouillard (Gerald Schömbs)</em>
+
+![](assets/shark-photo2.jpg)
+
+<em>Requin et banc de poissons (National Geographic)</em>
+
+Nous avons donc mis en œuvres des méthodes pour reproduire de façon
+crédible ces phénomènes et ces objets dans l'environnement virtuel que
+nous avons créé. La Table
+ci-dessous résume nos choix de méthodes.
+
+
+
+<table>
+  <thead>
+    <tr>
+      <th>Phénomène / objet</th>
+      <th>Méthode</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Banc de poissons</td>
+      <td><ul>
+        <li>Modèle des <em>Boids</em></li>
+        <li>Règles supplémentaires pour gérer l'orientation, et l'évitement du sol et des des requins</li>
+      </ul></td>
+    </tr>
+    <tr>
+      <td>Requins</td>
+      <td><ul>
+        <li>Trajectoire par interpolation entre *keyframes*<ul><li>Spline cardinale pour la position</li><li>Interpolation sphérique linéaire entre quaternions pour la
+        rotation</li></ul></li>
+        <li>Sphère englobante pour la gestion de l'évitement par les petits
+    poissons.</li>
+      </ul></td>
+    </tr>
+    <tr>
+      <td>Caustiques</td>
+      <td><ul>
+        <li>Projection de texture animée</li>
+        <li><em>Shadow mapping</em></li>
+      </ul></td>
+    </tr>
+    <tr>
+      <td>Obscurcissement selon la distance</td>
+      <td><ul>
+        <li>Prise en compte de la distance à la caméra dans le <em>fragement
+    shader</em></li>
+        <li>Modèle du brouillard exponentiel</li>
+      </ul></td>
+    </tr>
+    <tr>
+      <td>Plongeur (utilisateur)</td>
+      <td><ul>
+        <li>Caméra première personne, contrôle clavier-souris.</li>
+        <li>Mouvement par simulation physique avec peu de frottements</li>
+      </ul></td>
+    </tr>
+    <tr>
+      <td>Algues et coraux</td>
+      <td><ul>
+        <li>Billboards croisés.</li>
+        <li>Apparence et rotation aléatoires.</li>
+      </ul></td>
+    </tr>
+    <tr>
+      <td>Monde pseudo-infini</td>
+      <td><ul>
+        <li>Création du terrain par bruit de Perlin</li>
+        <li>Génération aléatoire des objets sous-marins (requins et végétation)</li>
+        <li>Stockage et chargement par régions (*chunks*)</li>
+      </ul></td>
+    </tr>
+  </tbody>
+</table>
 
 
-The objective of the library is to be simple as simple as possible to read and use.
-The majority of VCL structures and functions are aimed to be minimalistic without hidden states. The code remains fully compatible with direct raw OpenGL calls and user-defined shaders. The animation loop itself is entirely defined by the user.
+Nous décrirons plus en détail ces méthodes dans les parties suivantes.
+La figure ci-dessous présente le résultat obtenu suite à la
+mise en œuvre de toutes ces méthodes pour créer une scène sous-marine.
 
+![](assets/shark_w_fishes.jpg)
 
-The code contains two main parts:
-* The VCL library itself in `vcl/` directory - contains the helper functions and structures
-* Some example 3D scenes in `scenes/` directory. Each scene is fully defined in its subdirectory, and the switch between different scene is set using a keyword defined in `scene/current_scene.hpp` file.
- * Link to [INF443 scenes exercises](https://imagecomputing.net/damien.rohmer/teaching/2019_2020/semester_2/INF443_graphique_3D/TD/02_graphique_3D/content/000_introduction/index.html)
+<em>Scène sous-marine obtenue</em>
 
-<br>
+## Le monde
 
-<a name="Compilation"></a>
-## Compile the library
 
+### Monde infini : *chunking* et génération aléatoire
 
 
-The compilation can be done either using the provided
-* **Makefile**: Linux/MacOS only 
-* **CMakeLists.txt** using CMake (Linux/MacOS/Windows)
+Afin de donner l'illusion d'un monde sous-marin extrêmement vaste, nous
+avons souhaité ne pas limiter dans l'espace l'étendue de notre scène (ou
+du moins de le rendre suffisament vaste pour qu'un joueur n'en atteigne
+jamais les bords). Comme il n'est pas envisageable de générer en une
+seule fois ce monde très large, ni de dessiner à l'écran l'intégralité
+de ce monde à chaque image de l'animation, il est nécessaire de diviser
+le monde en régions (*chunks*) : seules les régions autour du joueur
+seront prises en compte lors du rendu, et ces régions seront générés à
+mesure que le joueur se déplace dans le monde.
 
+Notre terrain est divisé selon une grille carrée, chaque case de la
+grille est un *chunk*. La Figure
+ci-dessous rend ce découpage visible : seuls les *chunks*
+à distance 6 ou moins (en norme 1) du joueur sont pris compte pour le
+rendu.
 
-The library has one external dependency: [GLFW](https://www.glfw.org/) which can be installed through standard packages in Linux/MacOS (see the provided detailed tutorials).
+![](assets/chunking_pov.jpg)
 
+<em>Vue du joueur</em>
 
+![](assets/chunking_up.jpg)
 
-* [Command lines to compile in Linux/MacOS](doc/compilation.md#command_line)
-* **Detailed tutorials** to set up your system and compile on
-  * [Linux/Ubuntu](doc/compilation.md#Ubuntu)
-  * [MacOS](doc/compilation.md#MacOS)
-  * [Windows](doc/visual_studio.md)
+<em>Vue de haut</em>
 
+Dans le code C++, c'est l'objet qui est responsable de gérer le
+chargement et la génération des objets de type , qui stockent chacun
+pour une de ces régions :
 
+-   le maillage du terrain (généré à partir d'une unique fonction de
+    bruit de Perlin pour l'intégralité du monde, assurant la continuité
+    aux bords des chunks)
 
-You may edit the code using
-* QtCreator on Linux/MacOS: [Setting up and using QtCreator](doc/qtcreator.md)
-* Visual Studio on Windows
+-   les éléments de décors (i.e. billboards figurant la végétation)
+    présents sur le chunk, dont les positions, types, et rotations sont
+    tirés de manière aléatoire lors de la génération du *chunk*.
 
-<br>
+### Algues et coraux : *billboards* croisés
 
-<a name="Usage"></a>
-## Basic usage of VCL structures
 
-Note that a _still incomplete_ [Doxygen documentation is available online](https://imagecomputing.net/damien.rohmer/teaching/general/vcl_doc/html/).
+Les algues et coraux sont créés sous la forme de texture 2D plaqués sur
+des *billboards* mis en croix pour leur donner plus de volume. Étant
+donné l'utilisation de transparence dans les textures, et afin d'éviter
+les erreurs de rendu, il est nécessaire de les dessiner du plus éloigné
+au plus proche. Pour éviter les les erreurs de rendu sur une croix de
+billboards, chaque croix est décomposée en quatre parties ; ces parties
+seront dessinés de la plus loin à la plus proche (cet ordre est calculé
+à partir d'un simple produit scalaire), comme expliqué sur la figure
+ci-dessous.
 
-_You may also generate this documentation locally in calling Doxygen on the file `doc/config_doxygen`._
+![Le *billboard* croisé est découpé en quatre parties qui seront
+dessinées dans un ordre prenant en compte la position relative du
+joueur.](assets/cross_billboard_render.png)
 
 
-<a name="vec"></a>
-### vec
+Ces *billboards* sont placés à des positions aléatoires dans les
+*chunks* (tout en respectant une distance minimale entre eux), avec une
+rotation et une texture tirées aléatoirement.
 
-Basic structure and functions associated to 2/3/4D vectors are provided as `vec2`, `vec3` and `vec4` (following mostly GLSL naming convention).
+## Animaux marins : des modèles animés
 
-`vec3` (and similarily with `vec2` and `vec4`) are lightweight structure storing 3 floating values (x,y,z). `vec3` are used throughout the scenes to define typically 3D vectors and positions coordinates.
 
-```c++
-// Declaring 2D/3D/4D vectors
-vec2 p0 = {1.1f, 2.0f};
-vec3 p1 = {1.1f, 2.0f, -2.5f};
-vec4 p2 = {1.1f, 2.0f, -2.5f, 8.1f};
+### Les requins : interpolation de trajectoire
 
-vec3 p3; // Default values initialized at (0,0,0)
 
-// alternative declaration: constructor call
-vec3 p4 = vec3(1.1f, 2.0f, -2.5f);
-```
+Les requins sont placés dans le monde au fur et à mesure que le joueur
+se déplace : lorsqu'un nouveau *chunk* est généré (donc hors de la vue
+du joueur), un requin a un 12% de chance d'y apparaître ; on lui
+attribue dans ce cas une trajectoire circulaire fixe dont le rayon est
+tiré aléatoirement, avec éventuellement une variation d'altitude au
+cours du mouvement. Cette méthode permet de faire apparaître les requins
+hors de la vue du joueur, même si sa trajectoire peut s'étendre sur
+plusieurs chunks (voir la figure
+ci-dessous).
 
-Components can be accessed via named (.x, .y, .z) or indexed ([0], [1], [2]) syntax.
+![](assets/shark_gen.png)
 
-```c++
-vec3 p = {1.1f, 2.5f, -2.0f};
-p.x = 0.5f;   // Access component as .x, .y, .z
-p[1] = -2.5f; // Access component as [0]/[1]/[2]
+<em> Génération des requins : (a) le joueur J se déplace dans des chunks déjà générés (b) le déplacement du joueur J entraîne la génération de nouveaux chunks, un requin apparaît dans l'un d'eux</em>
 
-// Check equality between two vec3 using is_equal(vec3,vec3) function
-assert( is_equal(p, {0.5f, -2.5f, -2.0f}) );
-```
+Les objets sont utilisés pour représenter les requins. Ils stockent :
 
-vec3 (and all other structures) can be safely copied (no pointer or references involved).
+-   une trajectoire (type ) qui donne à chaque image une position et une
+    rotation au requin par interpolation entre des *keyframes* définis
+    lors de l'apparition du requin.
 
-```c++
-vec3 p0 = {1.1f, 2.5f, -2.0f};
-vec3 p1 = {5.0f, 1.1f,  3.0f};
+-   le modèle 3D d'un requin.
 
-// Copy p1.x/y/z = p0.x/y/z
-p1 = p0;
+L'ensemble des requins est géré par l'objet , qui s'occupe de leur
+apparition, de leur mise à jour à chaque image, et de leur rendu.
 
-p1.x = -12.0f;
+### Bancs de poissons et comportements de groupe : les *Boids*
 
-// modifying p1 doesn't impact p0
-assert( is_equal(p0, {  1.1f, 2.5f, -2.0f}) );
-assert( is_equal(p1, {-12.0f, 2.5f, -2.0f}) );
-```
 
-Standard vector operators +-*/ are directly available
+Pour les poissons qui nagent autour des requins, on a préféré utiliser
+une nouvelle méthode d'animation. Ainsi, contrairement aux requins, on
+n'a pas adopté une animation descriptive en définissant au préalable le
+trajet des poissons. L'animation choisie est le modèle des *Boids*,
+défini par Craig [^1] en 1986, auquel nous ajoutons certaines règles
+pour obtenir le comportement voulu.
 
-```c++
-vec3 p = {1.0f, -1.5f, 2.0f};
-p = 4 * p;           // p = {4,-6,8}
-p = p / 2;           // p = {2,-3,4}
-p = p + vec3(1,1,1); // p = {3,-2,5}
-p = -p;              // p = {-3,2,-5}
-
-// Operators can be chained
-vec3 p2 = ( 2*p + vec3(1,0,2)/2.0f ) / 1.2f;
-
-// Display the coordinates
-std::cout<< p << std::endl;
-```
-
-As well as helping mathematical functions
-
-```c++
-vec3 a = {1,2,3};
-vec3 b = {1,2,-1};
-
-vec3  c = a * b;        // pointwise multiplication c = {1,4,-3}
-float d = dot(a, b);    // dot product a.b = 2
-vec3  e = cross(a,b);   // cross product a x b = {-8,4,0}
-float f = norm(a);      // norm ||a|| = sqrt(dot(a,a))
-vec3  g = normalize(a); // return the unit norm vector a / ||a||
-```
-
-<a name="mat"></a>
-### mat
-
-Similarily to vectors, the library provide `mat2`, `mat3` and `mat4` structure (also following GLSL naming convention). 
-
-```c++
-// Direct initialization
-mat3 A = { 1.1f, 2.5f, 2.0f,
-          -2.1f, 4.1f, 1.5f,
-            3.0f, 1.0f, 3.5f};
-
-// Display matrix components
-std::cout<< A <<std::endl;
-
-// Matrix-vector product
-vec3 x = {1,2,3};
-vec3 y = A * x;   // = {12.1, 10.6, 15.5}
-
-
-// Matrix component access
-A(0,0) =  2.0f;
-A(1,0) =  3.0f;
-A(0,1) = -1.0f;
-// A = { 2.0f, -1.0f, 2.0f,
-//       3.0f,  4.1f, 1.5f,
-//       3.0f,  1.0f, 3.5f};
-
-mat3 B; // default initialization as matrix identity
-
-// Matrix product
-mat3 C = A * B;
-```
-
-As well as several helping function
-
-```c++
-// Helper function
-mat3 At = transpose(A); // matrix transpose
-mat3 iA = inverse(A);   // matrix inverse: A*iA = identity
-float d = det(A);       // matrix determinant = 13.1
-
-// Access to row and column
-vec3 c0 = A.col(0); // first column = {2,3,3}
-vec3 r1 = A.row(1); // second row   = {3, 4.1, 1.5}
-// Indexing matrix as a contiguous vector
-// A[0] == 2.0f
-// A[1] == -1.0f
-// ...
-// A[8] == 3.5f
-```
-
-<a name="Transformations"></a>
-### Transformations
-
-`mat3` can be used to store linear transformation (such as rotation), while `mat4` can store general affine transform.
-
-Rotations in 3D can be defined using the two helper functions
-
-```c++
-mat3 rotation_from_axis_angle_mat3(const vec3& axis, float angle);
-mat3 rotation_between_vector_mat3(const vec3& a, const vec3& b);
-```
-
-Example of usage
-```c++
-// Rotation of pi/4 around the y-axis
-mat3 R1 = rotation_from_axis_angle_mat3({0,1,0}, 3.14f/4);
-// Rotation of pi/6 around some arbitrary axis (1,5,-2)/||(1,5,-2)||
-mat3 R2 = rotation_from_axis_angle_mat3({1,5,-2}, 3.14f/6);
-
-// Two arbitrary axis (scaled to have a unit norm)
-vec3 a = normalize(vec3{1,5,-2});
-vec3 b = normalize(vec3{-2,1.5,3});
-// Rotation transforming a into b: R3 a = b
-mat3 R3 = rotation_between_vector_mat3(a, b);
-```
-
-`mat4` provide helper tools to transform linear and translation component into a 4x4 matrix corresponding to the affine transform
-
-```c++
-// A 3x3 matrix
-mat3 R = rotation_from_axis_angle_mat3({0,1,0}, 3.14f/4);
-// A translation vector
-vec3 t = {1,-2,3};
-// Generate the 4x4 matrix T such that
-// T = (         |    )
-//     (    R    | t  )
-//     ( ________|____)
-//     ( 0  0  0 | 1  )
-mat4 T = mat4::from_mat3_vec3(R, t);
-```
-
-Other helper functions are provided to easy generate special matrix corresponding to scaling, translation, etc.
-
-```c++
-/** Generate identity matrix */
-static mat4 identity();
-/** Matrix filled with zeros */
-static mat4 zero();
-/** Generate standard OpenGL-type perspective matrix */
-static mat4 perspective(float angle_of_view, float image_aspect, float z_near, float z_far);
-
-// Matrices related to transformations:
-static mat4 from_scaling(float s);
-static mat4 from_scaling(const vcl::vec3& s);
-static mat4 from_mat3(const vcl::mat3& m);
-static mat4 from_translation(const vcl::vec3& t);
-```
-
-<a name="Buffers"></a>
-### Buffers
-
-#### Dynamic 1D buffer
-
-The structure `buffer<type>` is proposed at your convenience to store arbitrary number and numerical data contiguously in memory. `buffer` is only a special case of `std::vector` associated to an extra set of convenient functionalities for numerical vectors such as operators +-*/, std::cout, as well as strong bound checking.
-
-```c++
-// Buffer initialization
-buffer<float> a = {1.1f, 2.5f, 8.0f, 4.0f};
+Le modèle des *Boids* a pour objectif de simuler le comportement d'un
+groupe d'oiseau ou d'un banc de poissons (notre cas). Il consiste en la
+définition de règles simples respectés de manière individuelle par
+chaque poisson dans le banc, et qui entraîne l'émergence d'un
+comportement de groupe complexe. Trois contraintes doivent être
+respectées :
 
-// default initialization as an empty vector
-buffer<float> b;
+1.  Séparation : assez naturellement, on ne veut pas que les poissons se
+    rentrent dedans. Chaque boid à un rayon et un angle de vision qui
+    lui permettent de remarquer la présence d'autres boids et, ainsi, de
+    s'éloigner légèrement de ces derniers afin d'éviter une éventuelle
+    collision.
 
-// Buffer can be resized at any time
-b.resize(45); // b.size()==45
-b.fill(5.0f); // fill all 45 elements with the number 5
+2.  Alignement : avec ce même rayon de vision, le boid va essayer
+    d'aller dans la même direction que les boids qui les entourent.
+    Cette action conduit à l'obtention de groupes d'individus qui se
+    déplacent ensemble dans une direction.
 
-// Add an element at the back
-a.push_back(2.4f);
+3.  Cohésion : enfin, chaque boid va se diriger vers le centre de ce
+    groupe. Ainsi, les poissons se rapprocheront et auront un objectif
+    commun. L'implémentation de cette dernière contrainte permet
+    d'obtenir des bancs de poissons resserrés.
 
-// Check equality
-assert( is_equal(a, {1.1f, 2.5f, 8.0f, 4.0f, 2.4f}) );
+Une fois les bancs de poissons simulés à partir de ces règles simples,
+il a fallu les intégrer à la scène finale. Dès lors, il a été nécessaire
+d'implémenter règles simples pour gérer la présence du sol et des
+requins, et éviter les directions de nage peu naturelle :
 
-// Display all elements
-std::cout<< a <<std::endl;
+1.  Préférence pour l'horizontalité : les boids préfèrent avoir une
+    orientation qui ne les fait aller ni trop vers le haut, ni trop vers
+    le bas.
 
-// Getter/Setter similar to std::vector
-a[2] = a[0] + 1;
-// Calling a[5] would generate a run time error
+2.  Évitement du sol (et du ciel) : les boids sont incités à rester dans
+    un intervalle d'altitude donné.
 
-// Apply operators on the entire buffer
-a = 2.0f * a;
-a = a + 2.5f; // add 2.5f to all elements of a
-float avg = average(a); // get averaged value of the buffer
-```
+3.  Évitement des requins : lorsqu'un boid voit un requin devant lui, il
+    fait demi-tour, et lorsqu'il perçoit un requin derrière lui, il
+    fuit.
 
-`buffer` can be used with `vec3` to conveniently store coordinates. Note that all floating values of the buffer are guaranteed to be contiguous in memory.
+Ces six règles se traduisent en six forces $\mathbf{F}_i$ qui
+s'appliquent sur le boid ; on obtient alors l'accélération par le
+principe fondamental de la dynamique $\sum\mathbf{F}_i = m \mathbf{a}$.
 
-```c++
-buffer<vec3> a = { {1,0,0}, {2,1,3} };
-a.push_back({0,1,2});
+#### 
 
-a[0] = {0,0,1}; // Accessing an element as a vec3
-a[0].x = 1.1f;  // x coordinate of the first element
+Pour donner une impression d'infinité du monde tout en gardant un nombre
+fixe de boids dans le monde, nous avons limité la zone de déplacement
+possible des poissons. Afin d'éviter la création de murs invisibles qui
+conduirait à des mouvements peu naturel, on a mis en place une méthode
+de *wraparound* dans un cube centré sur le joueur : lorsqu'un poisson
+atteint le bord de ce cube, il est immédiatement téléporté de l'autre
+côté du cube. Cette téléportation a lieu hors du champs de vision du
+joueur, qui a alors simplement l'impression que de nouveaux poissons
+arrivent de loin. Cette méthode permet également de garder une densité
+importante de poissons autour du joueur, alors qu'un nombre fixe de
+poisson est gardé en permanence.
 
-// Display all coordinates
-std::cout<< a <<std::endl;
+#### 
 
-// numerical operations on the entire buffer
-a = 2.0f*a;
-a = a + vec3(1,1,0); // (1,1,0) is added to every element
+Mettre en place ce modèle nous a conduit à faire des choix
+d'implémentation :
 
-buffer<vec3> b;
-b.resize(3);
-b.fill({0,1,0});
+-   Optimisation spatiale : une méthode naïve de mise à jour des boids
+    consiste pour chaque boids à itérer sur tous les autres boids et à
+    repérer ceux qui sont proches (seuls les voisins ont une influence).
+    Une optimisation que nous avons implémenté consiste à diviser le
+    cube dans lequel se situent les boids selon une grille régulière et
+    à placer les boids dans les cases de cette grille ; pour une taille
+    de case supérieure au rayon de vision du boid, un boid n'a à
+    considéré que les boids qui sont dans la même case que lui ou dans
+    les cases voisines (soit 9 cases à considérer). On peut même réduire
+    à 4 le nombre de cases à prendre en compte en localisant le boid
+    dans la grille duale à la première (voir la figure ci-dessous).
 
-// componentwise sum: for all i, a[i] = a[i] + b[i]
-a = a + b;
-// componentwise product: for all i, a[i] = a[i] + b[i]
-a = a * b;
-```
+-   *Raymarching* pour la détection des requins : si on appelle
+    $\left\{\mathbf{T} ; \mathbf{N}; \mathbf{B}\right\}$ le repère local
+    d'un boid, la détection des requins consiste en du raymarching dans
+    les 26 directions donnés par
+    $a\mathbf{T} + b\mathbf{N} + c\mathbf{B}, \quad (a,b,c) \in \left\{-1,0,1\right\}^3$
+    et $(a,b,c) \neq (0,0,0)$ (i.e. tout autour du boid). La distance à
+    un requin est approximée par la distance à la spère qui englobe ce
+    requin. Toutes les directions où un requin est trouvé à une faible
+    distance sont prises en compte, et le boid cherche alors à s'en
+    éloigner.
 
-#### 2D/3D buffers
+![](assets/grid_opt.png)
 
-Buffers organized as 2D / 3D grid are also provided for convenience as `buffer2D` and `buffer3D`.
+<em>Optimisation spatiale : les boids sont placés dans une grille afin de faciliter le repérage des voisins. En rouge : le boid actuellement mis à jour, et son champ de vision. En vert : ses voisins potentiels (pris en compte). En bleu : boids trop éloignés (ignorés). Carré rouge en pointillé : case du boid rouge dans la grille duale.</em>
 
-These buffer are internally similar to 1D one, and ensure contiguity of elements, but provide accessor using (x,y) notations and handle bounds checking.
+## Effets de lumière
 
-Example of a buffer2D containing vec3 - example of application: grid of positions.
 
-```c++
-// Initialize a grid of size 2x3
-// Each element of the grid contains a vec3
-buffer2D<vec3> grid(2,3);
+### Caustiques : projection de texture et *shadowmapping*
 
-// Fill the entire grid with (1,1,0)
-grid.fill({1,1,0});
 
-// Set grid each grid element using (x,y) indexed notation
-grid(0,0)={0,0,0}; grid(1,0)={0,0,1};
-grid(0,1)={0,1,0}; grid(1,1)={0,1,1};
-grid(0,2)={1,0,0}; grid(1,2)={1,0,1};
+Notre méthode de simulation de caustiques s'inspire de celle décrite par
+Mark [^2] : une texture animée représentant les fameux cercles de
+lumière des caustiques est projetée depuis la source de lumière sur le
+monde. Nous avons complété sa méthode en ajoutant du placage d'ombre
+(*shadowmapping*). Pour expliquer cette méthode, il est intéressant de
+considérer deux caméras :
 
-// Grid element can also be indexed using its offset in the buffer
-grid[0] = {0,0,0};
-grid[1] = {0,0,1};
-grid[2] = {0,1,0};
-grid[3] = {0,1,1};
-grid[4] = {1,0,0};
-grid[5] = {1,0,1};
+1.  la caméra de l'utilisateur : elle correspond à la vue du plongeur.
 
-// Display all elements
-std::cout<< grid <<std::endl;
+2.  la caméra de la source de lumière : elle correspond à la vue
+    qu'aurait un observateur s'il était situé sur la source de lumière.
 
+Effectuer un rendu depuis une caméra nous permet à la fois :
 
-// Compatible with operators
-buffer2D<vec3> grid2 = 0.5f * grid;
+1.  de remplir le *framebuffer* de cette caméra, i.e. l'image (tableau
+    de pixel) que voit cette caméra.
 
-grid = 2.0f * grid;
-buffer2D<vec3> g0 = grid + grid2; // g0(i,j) = grid(i,j) + grid2(i,j)
-buffer2D<vec3> g1 = grid * grid2; // g1(i,j) = grid(i,j) * grid2(i,j)
-buffer2D<vec3> g2 = grid + vec3(0,1,0); // g2(i,j) = grid(i,j) + (0,1,0)
-```
+2.  de remplir le *Z-buffer* associé à ce *framebuffer* qui donne pour
+    chaque pixel la profondeur de l'objet qui donne la couleur à ce
+    pixel.
 
-_Note: You cannot `push_back` one element in a buffer2D or buffer3D as it would not be compatible with grid-like structure._
+####
 
+La projection de caustiques consiste en un rendu en deux passes :
 
-#### Fixed size buffer
+1.  Rendu depuis la source de lumière : donne pour chaque pixel de la
+    vue depuis la source de lumière la profondeur de l'objet le plus
+    proche.
 
-The structure `buffer_stack` is similar the `buffer` (contiguous data) but for fixed size container (elements stored on stack memory).
-While `buffer` are only convenient wrap around `std::vector`, `buffer_stack` is a convenient wrap around `std::array` for numerical data.
+2.  Rendu depuis l'utilisateur : si la distance d'un objet à la source
+    de lumière n'est pas égale à la profondeur minimale trouvée dans le
+    *Z-buffer* du rendu 1 (à la position qu'aurait l'objet dans le vue
+    depuis la source de lumière), c'est qu'un autre objet se trouve
+    entre lui et la source de lumière ; il est donc dans l'ombre. Sinon,
+    il est illuminé : sa position dans la vue depuis la source de
+    lumière correspond à la position du pixel à projeter dans la texture
+    de caustiques.
 
-You will probably not have to create yourself directly `buffer_stack` object, but be aware that `vec` (2/3/4) are specific cases of the more general `buffer_stack`.
+Afin de pouvoir déplacer la source de lumière avec le joueur sans que
+les ombres ne changent, on a choisi une projection orthographique pour
+la caméra de la source de lumière (i.e. on enlève les effets de
+perspective). Ce déplacement est nécessaire, car on a fait le choix de
+n'illuminer que l'environnement proche du joueur. La limite de la zone
+d'illumination est visible sur la figure présentant le *chunking*.
 
+Implémenter ce rendu en deux passes a nécessité d'apporter des
+modifications considérables à la librairie : stockage des informations
+relatives à la source de lumière pour la scène dans une strucutre ,
+création du *framebuffer* pour le rendu 1, modification de la fonction
+pour permettre un rendu en deux passes, et ajout de deux *vertex
+shaders* et de deux *fragment shaders* (un pour chaque passes)
+notamment.
 
+### Brouillard exponentiel
 
 
+Le brouillard exponentiel est simplement implémenté dans le *fragment
+shader* en fonction de la distance $d$ de l'objet en train d'être
+dessiné : $$\text{fog}(d) = 1 - a\exp(-b \cdot d)$$ Et la couleur du
+pixel est alors obtenu par interpolation entre sa couleur réelle et la
+couleur du brouillard :
+$$\text{color} = (1 - \text{fog}) \text{true\_color} + \text{fog} \cdot \text{fog\_color}$$
+La couleur utilisée par OpenGL pour effacer l'écran est également mise à
+la valeur fog\_color.
 
-<!-- ### Doxygen Documentation -->
+## Le joueur : contrôle première personne
 
 
+Nous avons choisi une caméra première personne pour notre scène 3D, afin
+de donner à l'utilisateur l'impression d'être un plongeur nageant parmi
+les poissons. Les contrôles suivant sont disponibles :
 
+-   la souris pour faire tourner la caméra.
 
-<!-- 
-### Note on Compilation / Execution 
+-   les touches ZQSD + espace + CTRL pour se déplacer dans une
+    direction.
 
+-   la touche MAJ pour accélérer plus rapidement.
 
-When editing the source code (without adding/removing files), you don't need to run CMake every time, but only call Makefile. The following command can be used from the vcl/ directory:
+-   la touche F6 pour activer/désactiver le contrôle souris.
 
+-   la touche F11 pour activer/désactiver le mode plein écran.
 
-$ make -C build/
+-   ESCAPE pour quitter la scène.
 
+Afin de donner au joueur l'impression qu'il se déplace dans un fluide,
+son mouvement est régi par une simulation physique : appuyer sur une
+touche exerce une force dans une direction, et la décélération est lente
+lorsque le joueur relâche la touche car il y a peu de frottements.
 
-$ build/pgm
+## Conclusion
 
 
+En composant ces différentes méthodes dans une unique scène, on arrive à
+créer une ambiance sous-marine très complète. L'utilisateur qui s'y
+trouve plongé peut explorer à l'infini ces fonds marins qui regorgent de
+plantes et de coraux, et y observer les jeux de lumière et les
+interactions entre poissons qui s'y manifestent.
 
-## Using QTCreator with CMake (Linux/MacOs)
+![](assets/shark_w_shadow.jpg)
 
+<em>Petits poissons et requins nagent parmi les coraux.</em>
 
-Call qtcreator from vcl/ directory
+[^1]: *Flocks, Herds, and Schools: A Distributed Behavioral Model*,
+    1986, <https://www.red3d.com/cwr/papers/1987/boids.html>
 
-
-$ qtcreator CMakeLists.txt &
-
-
-Then follow the configuration steps from the GUI.
-
-
-By default, a temporary directory build-cmake-Desktop-Default is created (in the parent directory of CMakeLists.txt file), as well as a file CMakeLists.txt.user (same directory than CMakeLists.txt file). Both can be removed safely.
-
-
-
-
-
-
-## On Windows system with Visual Studio 
-
-
-- Use CMakeLists.txt with Visual Studio
-- Precompiled version of GLFW3 is provided (precompiled/glfw3_win)
-- You need to copy data/ and shaders/ directories in the executable directory -->
+[^2]: *OpenGL-rendering of Underwater Caustics*
+    (<https://www.opengl.org/archives/resources/code/samples/mjktips/caustics/>)
