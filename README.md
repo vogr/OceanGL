@@ -233,7 +233,7 @@ Pour les poissons qui nagent autour des requins, on a préféré utiliser
 une nouvelle méthode d'animation. Ainsi, contrairement aux requins, on
 n'a pas adopté une animation descriptive en définissant au préalable le
 trajet des poissons. L'animation choisie est le modèle des *Boids*,
-défini par Craig [^1] en 1986, auquel nous ajoutons certaines règles
+défini par Craig Reynolds [^1] en 1986, auquel nous ajoutons certaines règles
 pour obtenir le comportement voulu.
 
 Le modèle des *Boids* a pour objectif de simuler le comportement d'un
