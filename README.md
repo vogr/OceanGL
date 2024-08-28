@@ -3,6 +3,10 @@
 
 ~ [Amine Chaabouni](https://github.com/amine-chaabouni) et [Valentin Ogier](https://github.com/vogr)
 
+![](assets/shark_w_shadow.jpg)
+
+<em>Petits poissons et requins nagent parmi les coraux.</em>
+
 ## Compilation et execution
 
 ```console
@@ -430,9 +434,6 @@ trouve plongé peut explorer à l'infini ces fonds marins qui regorgent de
 plantes et de coraux, et y observer les jeux de lumière et les
 interactions entre poissons qui s'y manifestent.
 
-![](assets/shark_w_shadow.jpg)
-
-<em>Petits poissons et requins nagent parmi les coraux.</em>
 
 [^1]: *Flocks, Herds, and Schools: A Distributed Behavioral Model*,
     1986, <https://www.red3d.com/cwr/papers/1987/boids.html>
