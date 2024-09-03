@@ -315,10 +315,10 @@ d'implémentation :
     dans la grille duale à la première (voir la figure ci-dessous).
 
 -   *Raymarching* pour la détection des requins : si on appelle
-    $\left\{\mathbf{T} ; \mathbf{N}; \mathbf{B}\right\}$ le repère local
+    $\left\\\{\mathbf{T} ; \mathbf{N}; \mathbf{B}\right\\\}$ le repère local
     d'un boid, la détection des requins consiste en du raymarching dans
     les 26 directions donnés par
-    $a\mathbf{T} + b\mathbf{N} + c\mathbf{B}, \quad (a,b,c) \in \left\{-1,0,1\right\}^3$
+    $a\mathbf{T} + b\mathbf{N} + c\mathbf{B}, \quad (a,b,c) \in \left\\\{-1,0,1\right\\\}^3$
     et $(a,b,c) \neq (0,0,0)$ (i.e. tout autour du boid). La distance à
     un requin est approximée par la distance à la spère qui englobe ce
     requin. Toutes les directions où un requin est trouvé à une faible
@@ -396,7 +396,7 @@ shader* en fonction de la distance $d$ de l'objet en train d'être
 dessiné : $$\text{fog}(d) = 1 - a\exp(-b \cdot d)$$ Et la couleur du
 pixel est alors obtenu par interpolation entre sa couleur réelle et la
 couleur du brouillard :
-$$\text{color} = (1 - \text{fog}) \text{true\_color} + \text{fog} \cdot \text{fog\_color}$$
+$$\text{color} = (1 - \text{fog}) \text{true\\\_color} + \text{fog} \cdot \text{fog\\\_color}$$
 La couleur utilisée par OpenGL pour effacer l'écran est également mise à
 la valeur fog\_color.
 
